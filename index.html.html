@@ -1,0 +1,483 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ff6b00">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MOTO//SYS — Manutenção Preventiva</title>
+  <style>
+    :root {
+      --bg-main: #121212;
+      --bg-card: #1e1e1e;
+      --bg-input: #2a2a2a;
+      --text-main: #ffffff;
+      --text-muted: #a0a0a0;
+      --accent: #ff6b00; /* Laranja Custom/Bobber */
+      --success: #00e676;
+      --border: #333333;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* BARRA LATERAL (SIDEBAR) */
+    .sidebar {
+      width: 260px;
+      background-color: var(--bg-card);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    .sidebar-brand {
+      margin-bottom: 30px;
+    }
+
+    .sidebar-brand h2 {
+      color: var(--accent);
+      font-size: 20px;
+      letter-spacing: 1px;
+      font-weight: 800;
+    }
+
+    .sidebar-brand span {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .sidebar-menu {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .menu-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 12px 15px;
+      text-align: left;
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: 0.2s;
+    }
+
+    .menu-btn.active, .menu-btn:hover {
+      background-color: var(--bg-input);
+      color: var(--text-main);
+      border-left: 4px solid var(--accent);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      padding-top: 15px;
+    }
+
+    /* CONTEÚDO PRINCIPAL */
+    .main-content {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+    }
+
+    .view-section {
+      display: none;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    /* FORMULÁRIOS E CARDS */
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 25px;
+      max-width: 500px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      background-color: var(--bg-input);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .form-group input:focus {
+      border-color: var(--accent);
+    }
+
+    .btn {
+      background-color: var(--accent);
+      color: var(--text-main);
+      border: none;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+      transition: 0.2s;
+    }
+
+    .btn:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h2>MOTO//SYS</h2>
+      <span>v1.0 — garage</span>
+    </div>
+
+    <nav class="sidebar-menu">
+      <button class="menu-btn active" onclick="switchView('garagem')">Garagem</button>
+      <button class="menu-btn" onclick="switchView('status')">Status de Peças</button>
+      <button class="menu-btn" onclick="switchView('historico')">Histórico</button>
+    </nav>
+
+    <div class="sidebar-footer">
+      Dev: <strong>Bruno Sabanelli</strong>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    
+    <section id="view-garagem" class="view-section active">
+      <h1>Minha Moto</h1>
+      <div class="card">
+        <form id="form-moto">
+          <div class="form-group">
+            <label for="moto-modelo">Modelo da Moto</label>
+            <input type="text" id="moto-modelo" placeholder="Ex: Suzuki Intruder 125 / Dafra Kansas" required>
+          </div>
+          <div class="form-group">
+            <label for="moto-ano">Ano</label>
+            <input type="number" id="moto-ano" placeholder="Ex: 2008" required>
+          </div>
+          <div class="form-group">
+            <label for="moto-odometro">Odômetro Atual (KM)</label>
+            <input type="number" id="moto-odometro" placeholder="Ex: 34500" required>
+          </div>
+          <div class="form-group">
+            <label for="moto-uso">Média de KM rodados por dia</label>
+            <input type="number" id="moto-uso" placeholder="Ex: 15" required>
+          </div>
+          <button type="submit" class="btn">Salvar na Garagem</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="view-status" class="view-section">
+      <h1>Status de Manutenção Preventiva</h1>
+      
+      <div id="status-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+        <div class="card" style="max-width: 100%;">
+          <h3 style="color: var(--accent); margin-bottom: 15px;">Óleo do Motor</h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Troca recomendada a cada: <strong>3.000 KM</strong></p>
+          <div style="background-color: var(--bg-input); border-radius: 4px; height: 15px; width: 100%; overflow: hidden; margin-bottom: 10px;">
+            <div id="barra-oleo" style="background-color: var(--success); height: 100%; width: 0%; transition: 0.5s;"></div>
+          </div>
+          <span id="texto-oleo" style="font-size: 14px;">Carregando quilometragem...</span>
+        </div>
+
+        <div class="card" style="max-width: 100%;">
+          <h3 style="color: var(--accent); margin-bottom: 15px;">Filtro de Óleo</h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Troca recomendada a cada: <strong>6.000 KM</strong></p>
+          <div style="background-color: var(--bg-input); border-radius: 4px; height: 15px; width: 100%; overflow: hidden; margin-bottom: 10px;">
+            <div id="barra-filtro" style="background-color: var(--success); height: 100%; width: 0%; transition: 0.5s;"></div>
+          </div>
+          <span id="texto-filtro" style="font-size: 14px;">Carregando quilometragem...</span>
+        </div>
+
+        <div class="card" style="max-width: 100%;">
+          <h3 style="color: var(--accent); margin-bottom: 15px;">Kit Relação</h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 8px;">Vida útil estimada: <strong>15.000 KM</strong></p>
+          <div style="background-color: var(--bg-input); border-radius: 4px; height: 15px; width: 100%; overflow: hidden; margin-bottom: 10px;">
+            <div id="barra-relacao" style="background-color: var(--success); height: 100%; width: 0%; transition: 0.5s;"></div>
+          </div>
+          <span id="texto-relacao" style="font-size: 14px;">Carregando quilometragem...</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-historico" class="view-section">
+      <h1>Histórico de Trocas & Serviços</h1>
+      
+      <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+        <div class="card" style="flex: 1; min-width: 300px;">
+          <h3 style="color: var(--accent); margin-bottom: 15px;">Registrar Manutenção</h3>
+          <form id="form-manutencao">
+            <div class="form-group">
+              <label for="manut-peca">Peça / Componente</label>
+              <select id="manut-peca" required>
+                <option value="oleo">Óleo do Motor</option>
+                <option value="filtro">Filtro de Óleo</option>
+                <option value="relacao">Kit Relação</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="manut-km">KM do Registro</label>
+              <input type="number" id="manut-km" placeholder="Ex: 42000" required>
+            </div>
+            <div class="form-group">
+              <label for="manut-valor">Valor Pago (R$)</label>
+              <input type="number" step="0.01" id="manut-valor" placeholder="Ex: 45.00">
+            </div>
+            <button type="submit" class="btn">Registrar Serviço</button>
+          </form>
+        </div>
+
+        <div class="card" style="flex: 2; min-width: 400px; max-width: 100%;">
+          <h3 style="margin-bottom: 15px;">Serviços Executados</h3>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+              <thead>
+                <tr style="border-bottom: 2px solid var(--border); color: var(--text-muted);">
+                  <th style="padding: 10px 5px;">Peça</th>
+                  <th style="padding: 10px 5px;">KM</th>
+                  <th style="padding: 10px 5px;">Valor</th>
+                  <th style="padding: 10px 5px;">Data</th>
+                </tr>
+              </thead>
+              <tbody id="lista-manutencoes">
+                </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    function switchView(viewId) {
+      document.querySelectorAll('.view-section').forEach(section => {
+        section.classList.remove('active');
+      });
+      document.querySelectorAll('.menu-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      document.getElementById('view-' + viewId).classList.add('active');
+      
+      if (viewId === 'status' && typeof window.carregarDadosMoto === 'function') {
+        window.carregarDadosMoto();
+      }
+      
+      if (window.event && window.event.currentTarget) {
+        window.event.currentTarget.classList.add('active');
+      }
+    }
+  </script>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // ⚠️ COLOQUE SUAS CREDENCIAIS DO CONFIG DO FIREBASE AQUI ⚠️
+    const firebaseConfig = {
+      apiKey: "SUA_API_KEY",
+      authDomain: "SEU_AUTH_DOMAIN",
+      projectId: "SEU_PROJECT_ID",
+      storageBucket: "SEU_STORAGE_BUCKET",
+      messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+      appId: "SEU_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const MOTO_DOC_ID = "minha_moto_principal";
+    
+    const formMoto = document.getElementById('form-moto');
+    const formManutencao = document.getElementById('form-manutencao');
+
+    const nomesPecas = { oleo: "Óleo do Motor", filtro: "Filtro de Óleo", relacao: "Kit Relação" };
+
+    async function carregarDadosMoto() {
+      try {
+        const docRef = doc(db, "motos", MOTO_DOC_ID);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const dados = docSnap.data();
+          
+          document.getElementById('moto-modelo').value = dados.modelo || '';
+          document.getElementById('moto-ano').value = dados.ano || '';
+          document.getElementById('moto-odometro').value = dados.odometro_atual || '';
+          document.getElementById('moto-uso').value = dados.km_diaria_estimada || '';
+
+          const kmAtual = dados.odometro_atual || 0;
+          
+          const manutRef = collection(db, "manutencoes");
+          const q = query(manutRef, orderBy("km_realizada", "desc"));
+          const querySnapshot = await getDocs(q);
+          
+          let todasManutencoes = [];
+          let ultimaKMOleo = 0;
+          let ultimaKMFiltro = 0;
+          let ultimaKMRelacao = 0;
+
+          querySnapshot.forEach((doc) => {
+            const m = doc.data();
+            todasManutencoes.push(m);
+            
+            if (m.peca === 'oleo' && !ultimaKMOleo) ultimaKMOleo = m.km_realizada;
+            if (m.peca === 'filtro' && !ultimaKMFiltro) ultimaKMFiltro = m.km_realizada;
+            if (m.peca === 'relacao' && !ultimaKMRelacao) ultimaKMRelacao = m.km_realizada;
+          });
+
+          renderizarTabela(todasManutencoes);
+
+          // Cálculos
+          const cicloOleo = Math.max(0, kmAtual - ultimaKMOleo);
+          const porcetagemOleo = Math.min((cicloOleo / 3000) * 100, 100);
+          atualizarCardPeca('barra-oleo', 'texto-oleo', porcetagemOleo, cicloOleo, 3000);
+
+          const cicloFiltro = Math.max(0, kmAtual - ultimaKMFiltro);
+          const porcetagemFiltro = Math.min((cicloFiltro / 6000) * 100, 100);
+          atualizarCardPeca('barra-filtro', 'texto-filtro', porcetagemFiltro, cicloFiltro, 6000);
+
+          const cicloRelacao = Math.max(0, kmAtual - ultimaKMRelacao);
+          const porcetagemRelacao = Math.min((cicloRelacao / 15000) * 100, 100);
+          atualizarCardPeca('barra-relacao', 'texto-relacao', porcetagemRelacao, cicloRelacao, 15000);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar dados:", error);
+      }
+    }
+
+    function atualizarCardPeca(idBarra, idTexto, porcentagem, kmGasto, kmLimite) {
+      const barra = document.getElementById(idBarra);
+      const texto = document.getElementById(idTexto);
+      if(!barra || !texto) return;
+      
+      barra.style.width = `${porcentagem}%`;
+      
+      if (porcentagem < 60) barra.style.backgroundColor = 'var(--success)';
+      else if (porcentagem >= 60 && porcentagem < 85) barra.style.backgroundColor = '#ffeb3b';
+      else barra.style.backgroundColor = '#f44336';
+
+      const kmRestantes = Math.max(0, kmLimite - kmGasto);
+      texto.innerHTML = `Rodou <strong>${kmGasto} KM</strong> desde a última troca.<br><span style="color: ${porcentagem > 85 ? '#f44336' : 'var(--text-muted)'}; font-size: 12px;">Faltam aprox. <strong>${kmRestantes} KM</strong> para a manutenção.</span>`;
+    }
+
+    function renderizarTabela(lista) {
+      const tbody = document.getElementById('lista-manutencoes');
+      if(!tbody) return;
+      
+      if (lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" style="padding: 15px 0; color: var(--text-muted); text-align: center;">Nenhum serviço registrado.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = lista.map(m => {
+        const dataFormatada = m.data ? new Date(m.data.seconds * 1000).toLocaleDateString('pt-BR') : '-';
+        return `
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 10px 5px; font-weight: 600;">${nomesPecas[m.peca] || m.peca}</td>
+            <td style="padding: 10px 5px;">${m.km_realizada} KM</td>
+            <td style="padding: 10px 5px; color: var(--success);">R$ ${m.valor.toFixed(2)}</td>
+            <td style="padding: 10px 5px; color: var(--text-muted);">${dataFormatada}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    formMoto.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        await setDoc(doc(db, "motos", MOTO_DOC_ID), {
+          modelo: document.getElementById('moto-modelo').value,
+          ano: parseInt(document.getElementById('moto-ano').value),
+          odometro_atual: parseInt(document.getElementById('moto-odometro').value),
+          km_diaria_estimada: parseInt(document.getElementById('moto-uso').value),
+          ultima_atualizacao: new Date()
+        });
+        alert("Garagem atualizada com sucesso! 🏍️💨");
+        carregarDadosMoto();
+      } catch (error) { console.error(error); }
+    });
+
+    formManutencao.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const peca = document.getElementById('manut-peca').value;
+      const km_realizada = parseInt(document.getElementById('manut-km').value);
+      const valor = parseFloat(document.getElementById('manut-valor').value) || 0;
+
+      try {
+        await addDoc(collection(db, "manutencoes"), {
+          peca,
+          km_realizada,
+          valor,
+          data: new Date()
+        });
+        alert("Manutenção registrada com sucesso! 🛠️");
+        formManutencao.reset();
+        carregarDadosMoto();
+      } catch (error) {
+        console.error("Erro ao registrar manutenção:", error);
+      }
+    });
+
+    carregarDadosMoto();
+    window.carregarDadosMoto = carregarDadosMoto;
+  </script>
+<script>
+    // Registra o Service Worker para habilitar a instalação como App
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./service-worker.js')
+          .then(reg => console.log('MOTO//SYS PWA Ativado com sucesso!', reg))
+          .catch(err => console.error('Erro ao registrar PWA:', err));
+      });
+    }
+  </script>
+</body>
+</html>
