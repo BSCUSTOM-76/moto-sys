@@ -2,45 +2,29 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BS.CUSTOM — Garage Control</title>
-    <link rel="manifest" href="manifest.json">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --bg-main: #121212; --bg-card: #1a1a1a; --primary: #ff5500; --text-main: #ffffff; --text-muted: #a0a0a0; --border: #2d2d2d; --success: #00e676; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg-main); color: var(--text-main); display: flex; min-height: 100vh; }
-        #auth-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; justify-content: center; align-items: center; }
-        .auth-card { background: var(--bg-card); width: 100%; max-width: 400px; padding: 30px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
-        input, select { width: 100%; padding: 12px; margin: 10px 0; background: #242424; border: 1px solid var(--border); color: white; border-radius: 8px; }
-        button { width: 100%; padding: 12px; background: var(--primary); border: none; color: white; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        :root { --bg: #121212; --card: #1a1a1a; --primary: #ff5500; --text: #ffffff; }
+        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; }
         .hidden { display: none !important; }
-        main { flex-grow: 1; padding: 40px; }
-        .maint-card { background: var(--bg-card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-        .progress-container { background: #242424; height: 8px; border-radius: 4px; overflow: hidden; margin: 10px 0; }
-        .progress-bar { height: 100%; }
+        .card { background: var(--bg-card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
+        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="auth-overlay">
-        <div class="auth-card">
-            <h2>BS.CUSTOM</h2>
-            <form id="auth-form">
-                <input type="email" id="auth-email" placeholder="E-mail" required>
-                <input type="password" id="auth-password" placeholder="Senha" required>
-                <button type="submit">Entrar no Sistema</button>
-            </form>
-        </div>
+        <form id="auth-form">
+            <input type="email" id="auth-email" placeholder="E-mail" required><br>
+            <input type="password" id="auth-password" placeholder="Senha" required><br>
+            <button type="submit">Entrar</button>
+        </form>
     </div>
 
-    <main>
-        <h2>Garagem Técnica</h2>
-        <div id="app-content">
-            <select id="moto-selector"><option>Carregando...</option></select>
-            <div id="maint-cards-container"></div>
-        </div>
+    <main id="app-content" class="hidden">
+        <h1>Garagem Técnica</h1>
+        <select id="moto-selector"><option value="">Carregando...</option></select>
+        <div id="maint-cards"></div>
     </main>
 
     <script type="module">
@@ -62,30 +46,38 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // Login
-        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+        // Lógica de Login
+        document.getElementById('auth-form').onsubmit = async (e) => {
             e.preventDefault();
-            const email = document.getElementById('auth-email').value;
-            const pass = document.getElementById('auth-password').value;
-            try { await signInWithEmailAndPassword(auth, email, pass); } 
+            try { await signInWithEmailAndPassword(auth, document.getElementById('auth-email').value, document.getElementById('auth-password').value); }
             catch (err) { alert("Erro: " + err.message); }
-        });
+        };
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 document.getElementById('auth-overlay').classList.add('hidden');
-                carregarDados(user.uid);
-            } else {
-                document.getElementById('auth-overlay').classList.remove('hidden');
+                document.getElementById('app-content').classList.remove('hidden');
+                carregarMotos(user.uid);
             }
         });
 
-        function carregarDados(uid) {
-            const q = query(collection(db, "motos"), where("id_usuario", "==", uid));
-            onSnapshot(q, (snapshot) => {
-                const container = document.getElementById('maint-cards-container');
-                container.innerHTML = '<h3>Pneu Dianteiro e Traseiro monitorados</h3>';
-                // Adicione aqui a lógica de renderização dos cards (o LIMITES, etc)
+        function carregarMotos(uid) {
+            onSnapshot(query(collection(db, "motos"), where("id_usuario", "==", uid)), (snapshot) => {
+                const sel = document.getElementById('moto-selector');
+                sel.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const moto = doc.data();
+                    sel.innerHTML += `<option value="${doc.id}">${moto.modelo}</option>`;
+                    renderizarCards(moto);
+                });
+            });
+        }
+
+        function renderizarCards(moto) {
+            const container = document.getElementById('maint-cards');
+            const pecas = ["Pneu Dianteiro", "Pneu Traseiro", "Oleo Motor"];
+            pecas.forEach(p => {
+                container.innerHTML += `<div class="card"><strong>${p}</strong><br>Status: Monitorando...</div>`;
             });
         }
     </script>
