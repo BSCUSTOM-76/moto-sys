@@ -7,25 +7,37 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --bg-main: #121212; --bg-card: #1a1a1a; --primary: #ff5500; --success: #00e676; --text: #fff; }
-        body { background-color: var(--bg-main); color: var(--text); font-family: 'Inter', sans-serif; padding: 20px; }
-        .maint-card { background: var(--bg-card); padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; }
+        :root { --bg-main: #121212; --bg-card: #1a1a1a; --bg-input: #242424; --primary: #ff5500; --text-main: #ffffff; --text-muted: #a0a0a0; --border: #2d2d2d; --success: #00e676; }
+        body { background-color: var(--bg-main); color: var(--text-main); display: flex; min-height: 100vh; }
+        sidebar { width: 260px; background: var(--bg-card); border-right: 1px solid var(--border); padding: 30px 20px; }
+        main { flex-grow: 1; padding: 40px; }
+        .maint-card { background: var(--bg-card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 15px; }
+        .progress-container { background: var(--bg-input); height: 8px; border-radius: 4px; overflow: hidden; margin: 10px 0; }
+        .progress-bar { height: 100%; transition: width 0.5s; }
         .status-ok { color: var(--success); }
         .status-alert { color: #ffaa00; }
         .status-critical { color: var(--primary); }
-        .progress-container { background: #333; height: 8px; border-radius: 4px; margin: 10px 0; }
-        .progress-bar { height: 100%; border-radius: 4px; }
     </style>
 </head>
 <body>
+    <sidebar>
+        <h1 style="color:var(--primary)">BS.CUSTOM</h1>
+        <div style="margin-top:40px;">
+            <div class="nav-item" onclick="switchView('status')" style="cursor:pointer;"><i class="fa-solid fa-wrench"></i> Status de Peças</div>
+        </div>
+    </sidebar>
 
-    <h1>Garagem BS.CUSTOM</h1>
-    <div id="maint-cards-container">Carregando dados...</div>
+    <main>
+        <section id="view-status" class="view-section active">
+            <h2>Status de Peças (Alerta: 100km)</h2>
+            <div id="maint-cards-container"></div>
+        </section>
+    </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        
         const firebaseConfig = {
             apiKey: "AIzaSyBr_NKOSzmh2CwbR7SYaLAk_0TsYe39VTY",
             authDomain: "moto-sys.firebaseapp.com",
@@ -35,48 +47,46 @@
             appId: "1:267462641413:web:f4d176ae31a2bdf970596c",
             measurementId: "G-4CZD6SMLWZ"
         };
-
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+
         const LIMITES = { "Oleo Motor": 3000, "Filtro Oleo": 6000, "Relação": 15000, "Vela": 10000, "Pneu Traseiro": 12000, "Pneu Dianteiro": 18000 };
 
-        // Função para disparar notificação
-        function dispararAlerta(tipo, km) {
+        function dispararNotificacao(tipo, km) {
             if (Notification.permission === "granted") {
-                new Notification("BS.CUSTOM - Atenção!", { body: `${tipo} precisa de manutenção! Faltam ${km} km.` });
-            } else if (Notification.permission !== "denied") {
+                new Notification("BS.CUSTOM - Atenção!", { body: `${tipo} está quase vencendo! Faltam apenas ${km} km.` });
+            } else if (Notification.permission === "default") {
                 Notification.requestPermission();
             }
         }
 
-        // Carrega dados e renderiza
-        onSnapshot(collection(db, "motos"), (snapshot) => {
+        onSnapshot(collection(db, "manutencoes"), (snapshot) => {
             const container = document.getElementById('maint-cards-container');
-            container.innerHTML = "";
-            snapshot.forEach((doc) => {
-                const moto = doc.data();
-                Object.keys(LIMITES).forEach(tipo => {
-                    const limite = LIMITES[tipo];
-                    const kmRodados = moto.km || 0; // Ajuste conforme seu campo de km no banco
-                    const kmRestantes = limite - kmRodados;
+            container.innerHTML = '';
 
-                    let status = "OK", cor = "var(--success)", aviso = "";
-                    if (kmRodados >= limite) {
-                        status = "VENCIDO"; cor = "var(--primary)";
-                        aviso = "⚠️ TROCA NECESSÁRIA!";
-                    } else if (kmRestantes <= 500) {
-                        status = "ALERTA"; cor = "#ffaa00";
-                        aviso = `⚠️ Faltam ${kmRestantes} km`;
-                        dispararAlerta(tipo, kmRestantes);
-                    }
+            Object.keys(LIMITES).forEach(tipo => {
+                const limite = LIMITES[tipo];
+                const kmRodados = 2950; // Exemplo: aqui o sistema detecta que faltam 50km
+                const kmRestantes = limite - kmRodados;
+                
+                let status = "OK", cor = "var(--success)", aviso = "";
+                
+                // MUDANÇA AQUI: Alerta configurado para 100km
+                if (kmRestantes <= 100 && kmRestantes > 0) {
+                    status = "ALERTA"; cor = "#ffaa00";
+                    aviso = `⚠️ Faltam apenas ${kmRestantes} km para a troca!`;
+                    dispararNotificacao(tipo, kmRestantes);
+                } else if (kmRestantes <= 0) {
+                    status = "VENCIDO"; cor = "var(--primary)";
+                    aviso = `❌ VENCIDO! Troca necessária imediatamente.`;
+                }
 
-                    container.innerHTML += `
-                        <div class="maint-card">
-                            <strong>${tipo}</strong> - <span class="status-${status.toLowerCase()}">${status}</span>
-                            <div class="progress-container"><div class="progress-bar" style="width: 50%; background: ${cor}"></div></div>
-                            <small>${aviso}</small>
-                        </div>`;
-                });
+                container.innerHTML += `
+                    <div class="maint-card">
+                        <strong>${tipo}</strong> - <span class="status-${status.toLowerCase()}">${status}</span>
+                        <div class="progress-container"><div class="progress-bar" style="width: ${Math.min(100, (kmRodados/limite)*100)}%; background: ${cor}"></div></div>
+                        <small>${aviso}</small>
+                    </div>`;
             });
         });
     </script>
