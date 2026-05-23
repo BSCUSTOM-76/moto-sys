@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MOTO//SYS — Oficina & Garagem</title>
+    <title>BS.CUSTOM — Oficina & Garagem</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a1a1a">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -39,23 +39,79 @@
         .auth-brand { font-family: 'Orbitron', sans-serif; color: var(--primary); font-size: 2rem; margin-bottom: 5px; }
         .auth-subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px; }
         .auth-toggle { display: flex; background: var(--bg-main); border-radius: 8px; padding: 4px; margin-bottom: 25px; border: 1px solid var(--border); }
-        .auth-toggle btn { flex: 1; padding: 10px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-radius: 6px; font-weight: 600; transition: 0.2s; }
-        .auth-toggle btn.active { background: var(--primary); color: white; }
+        .auth-toggle button { flex: 1; padding: 10px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-radius: 6px; font-weight: 600; transition: 0.2s; }
+        .auth-toggle button.active { background: var(--primary); color: white; }
         
-        /* INTERFACE PRINCIPAL */
-        sidebar { width: 260px; background: var(--bg-card); border-right: 1px solid var(--border); padding: 30px 20px; display: flex; flex-direction: column; }
-        .brand { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 10px; }
-        .brand span { font-size: 0.8rem; color: var(--text-muted); font-family: 'Inter', sans-serif; display: block; }
+        /* INTERFACE PRINCIPAL - BARRA LATERAL COM FLEXBOX */
+        sidebar { 
+            width: 260px; 
+            background: var(--bg-card); 
+            border-right: 1px solid var(--border); 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between;
+            position: relative;
+            min-height: 100vh;
+        }
         
-        .nav-menu { margin-top: 40px; display: flex; flex-direction: column; gap: 10px; flex-grow: 1; }
+        .sidebar-top { padding: 30px 20px 20px 20px; }
+        
+        /* CABEÇALHO DA LOGO */
+        .sidebar-header { 
+            text-align: center; 
+            padding-bottom: 25px; 
+            border-bottom: 1px solid var(--border); 
+            margin-bottom: 30px; 
+        }
+        .sidebar-logo { 
+            max-width: 90px; 
+            height: auto; 
+            margin-bottom: 15px; 
+            display: block; 
+            margin-left: auto; 
+            margin-right: auto; 
+        }
+        .sidebar-brand { 
+            color: var(--primary); 
+            font-family: 'Impact', 'Arial Black', sans-serif; 
+            font-size: 1.7rem; 
+            letter-spacing: 2px; 
+            margin: 0; 
+            text-transform: uppercase; 
+        }
+        .sidebar-subtitle { 
+            color: #666; 
+            font-size: 0.75rem; 
+            letter-spacing: 1px; 
+            display: block; 
+            margin-top: 4px; 
+        }
+        
+        .nav-menu { display: flex; flex-direction: column; gap: 10px; }
         .nav-item { display: flex; align-items: center; gap: 15px; padding: 14px 18px; color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; transition: 0.2s; cursor: pointer; }
         .nav-item:hover, .nav-item.active { background: var(--bg-input); color: var(--text-main); }
         .nav-item.active { border-left: 4px solid var(--primary); color: var(--primary); }
         
-        .user-panel { border-top: 1px solid var(--border); padding-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .user-panel { border-top: 1px solid var(--border); padding-top: 20px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
         .user-email { font-size: 0.85rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .btn-logout { background: transparent; border: 1px solid #ff3333; color: #ff3333; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; transition: 0.2s; }
         .btn-logout:hover { background: #ff3333; color: white; }
+
+        /* RODAPÉ DO BRUNO FIXO NO FIM */
+        .sidebar-footer { 
+            padding: 20px 15px; 
+            text-align: center; 
+            border-top: 1px solid var(--border); 
+            background-color: #111111; 
+        }
+        .footer-text { 
+            color: #555555; 
+            font-size: 0.75rem; 
+            font-family: 'Arial', sans-serif; 
+            margin: 0; 
+            letter-spacing: 0.5px; 
+        }
+        .footer-author { color: #888888; font-weight: bold; }
 
         main { flex-grow: 1; padding: 40px; max-width: 1200px; margin: 0 auto; width: 100%; }
         .view-section { display: none; }
@@ -99,7 +155,7 @@
 
         @media (max-width: 768px) {
             body { flex-direction: column; }
-            sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+            sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); min-height: auto; }
             .grid-forms { grid-template-columns: 1fr; }
             main { padding: 20px; }
         }
@@ -109,7 +165,7 @@
 
     <div id="auth-overlay">
         <div class="auth-card">
-            <div class="auth-brand">MOTO//SYS</div>
+            <div class="auth-brand">BS.CUSTOM</div>
             <div class="auth-subtitle" id="auth-msg">Acesse sua garagem técnica de projetos</div>
             
             <div class="auth-toggle">
@@ -132,18 +188,29 @@
     </div>
 
     <sidebar>
-        <div class="brand">
-            MOTO//SYS
-            <span>v3.0 — multi-user</span>
+        <div class="sidebar-top">
+            <div class="sidebar-header">
+                <img src="logo.png" alt="BS.CUSTOM Logo" class="sidebar-logo">
+                <h1 class="sidebar-brand">BS.CUSTOM</h1>
+                <span class="sidebar-subtitle">v3.0 — garage control</span>
+            </div>
+
+            <div class="nav-menu">
+                <div class="nav-item active" onclick="switchView('garagem', this)"><i class="fa-solid fa-gauge"></i> Garagem</div>
+                <div class="nav-item" onclick="switchView('status', this)"><i class="fa-solid fa-wrench"></i> Status de Peças</div>
+                <div class="nav-item" onclick="switchView('historico', this)"><i class="fa-solid fa-history"></i> Histórico</div>
+            </div>
+            
+            <div class="user-panel">
+                <div class="user-email" id="display-user-email">Carregando...</div>
+                <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-sign-out-alt"></i> Sair</button>
+            </div>
         </div>
-        <div class="nav-menu">
-            <div class="nav-item active" onclick="switchView('garagem', this)"><i class="fa-solid fa-gauge"></i> Garagem</div>
-            <div class="nav-item" onclick="switchView('status', this)"><i class="fa-solid fa-wrench"></i> Status de Peças</div>
-            <div class="nav-item" onclick="switchView('historico', this)"><i class="fa-solid fa-history"></i> Histórico</div>
-        </div>
-        <div class="user-panel">
-            <div class="user-email" id="display-user-email">Carregando...</div>
-            <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-sign-out-alt"></i> Sair</button>
+
+        <div class="sidebar-footer">
+            <p class="footer-text">
+                Desenvolvedor <span class="footer-author">Bruno Sabanelli</span>
+            </p>
         </div>
     </sidebar>
 
@@ -237,19 +304,18 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // CONFIGURAÇÃO DO SEU FIREBASE (MANTENHA SUAS CHAVES REAIS AQUI)
+        // CONFIGURAÇÃO DO SEU FIREBASE (LEMBRE-SE DE COLOCAR SUAS CHAVES REAIS AQUI!)
         const firebaseConfig = {
-  apiKey: "AIzaSyBr_NKOSzmh2CwbR7SYaLAk_0TsYe39VTY",
-  authDomain: "moto-sys.firebaseapp.com",
-  projectId: "moto-sys",
-  storageBucket: "moto-sys.firebasestorage.app",
-  messagingSenderId: "267462641413",
-  appId: "1:267462641413:web:f4d176ae31a2bdf970596c",
-  measurementId: "G-4CZD6SMLWZ"
-};
+            apiKey: "SUA_API_KEY_REAL_AQUI",
+            authDomain: "moto-sys.firebaseapp.com",
+            projectId: "moto-sys",
+            storageBucket: "moto-sys.appspot.com",
+            messagingSenderId: "SEU_ID_REAL",
+            appId: "SEU_APP_ID_REAL"
+        };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -325,7 +391,6 @@
 
         // --- INICIALIZAÇÃO DOS DADOS OTIMIZADOS ---
         function initApp() {
-            // Busca apenas as motos pertencentes ao usuário logado
             const qMotos = query(
                 collection(db, "motos"), 
                 where("id_usuario", "==", currentUser.uid)
@@ -352,7 +417,6 @@
                     selector.appendChild(opt);
                 });
 
-                // Mantém a seleção ou pega a primeira
                 if (!activeMotoId || !motosData.find(m => m.id === activeMotoId)) {
                     activeMotoId = motosData[0].id;
                 }
@@ -372,14 +436,12 @@
             carregarDadosMotoAtiva();
         };
 
-        // BUSCA AS MANUTENÇÕES FILTRADAS POR MOTO E USUÁRIO
         function carregarDadosMotoAtiva() {
             if (!activeMotoId || !currentUser) return;
 
             const motoAtiva = motosData.find(m => m.id === activeMotoId);
             if (!motoAtiva) return;
 
-            // Query composta com filtros precisos (exige o índice composto que criamos!)
             const qManut = query(
                 collection(db, "manutencoes"),
                 where("id_usuario", "==", currentUser.uid),
@@ -398,7 +460,7 @@
             });
         }
 
-        // --- OPERAÇÕES DE BANCO DE DADOS (GRAVAÇÃO COM ID_USUARIO) ---
+        // --- OPERAÇÕES DE BANCO DE DADOS ---
         window.cadastrarMoto = async function(e) {
             e.preventDefault();
             if (!currentUser) return;
@@ -408,7 +470,7 @@
                 ano: parseInt(document.getElementById('moto-ano').value),
                 odometro_atual: parseInt(document.getElementById('moto-km').value),
                 km_diaria_estimada: parseInt(document.getElementById('moto-media').value),
-                id_usuario: currentUser.uid // Injeta o dono do registro
+                id_usuario: currentUser.uid
             };
 
             try {
@@ -430,7 +492,7 @@
 
             const novaManut = {
                 id_moto: activeMotoId,
-                id_usuario: currentUser.uid, // Injeta o dono do registro
+                id_usuario: currentUser.uid,
                 tipo_componente: document.getElementById('manut-tipo').value,
                 km_realizada: parseInt(document.getElementById('manut-km').value),
                 data_servico: document.getElementById('manut-data').value
@@ -458,7 +520,7 @@
                 
                 const kmRodados = Math.max(0, moto.odometro_atual - ultimaKm);
                 let pct = Math.min(100, (kmRodados / limite) * 100);
-                let pctBarra = 100 - pct; // Inverte para mostrar a vida restante
+                let pctBarra = 100 - pct;
 
                 let statusTexto = "OK";
                 let statusClass = "status-ok";
@@ -528,7 +590,6 @@
             return mapas[tipo] || tipo;
         }
 
-        // --- ALTERNADOR DE ABAS ---
         window.switchView = function(viewName, element) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
