@@ -7,12 +7,11 @@
         :root { --bg: #121212; --card: #1a1a1a; --primary: #ff5500; --text: #ffffff; }
         body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; }
         .hidden { display: none !important; }
-        .card { background: var(--bg-card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
         button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
     </style>
 </head>
 <body>
-
     <div id="auth-overlay">
         <form id="auth-form">
             <input type="email" id="auth-email" placeholder="E-mail" required><br>
@@ -23,13 +22,13 @@
 
     <main id="app-content" class="hidden">
         <h1>Garagem Técnica</h1>
-        <select id="moto-selector"><option value="">Carregando...</option></select>
+        <select id="moto-selector"></select>
         <div id="maint-cards"></div>
     </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -46,7 +45,6 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // Lógica de Login
         document.getElementById('auth-form').onsubmit = async (e) => {
             e.preventDefault();
             try { await signInWithEmailAndPassword(auth, document.getElementById('auth-email').value, document.getElementById('auth-password').value); }
@@ -62,22 +60,15 @@
         });
 
         function carregarMotos(uid) {
-            onSnapshot(query(collection(db, "motos"), where("id_usuario", "==", uid)), (snapshot) => {
+            onSnapshot(query(collection(db, "motos"), where("id_usuario", "==", uid)), (snap) => {
                 const sel = document.getElementById('moto-selector');
                 sel.innerHTML = '';
-                snapshot.forEach(doc => {
+                snap.forEach(doc => {
                     const moto = doc.data();
                     sel.innerHTML += `<option value="${doc.id}">${moto.modelo}</option>`;
-                    renderizarCards(moto);
+                    // Aqui você chama a lógica de calcular o desgaste da moto
+                    document.getElementById('maint-cards').innerHTML = `<div class="card">Moto: ${moto.modelo} - KM: ${moto.odometro_atual}</div>`;
                 });
-            });
-        }
-
-        function renderizarCards(moto) {
-            const container = document.getElementById('maint-cards');
-            const pecas = ["Pneu Dianteiro", "Pneu Traseiro", "Oleo Motor"];
-            pecas.forEach(p => {
-                container.innerHTML += `<div class="card"><strong>${p}</strong><br>Status: Monitorando...</div>`;
             });
         }
     </script>
