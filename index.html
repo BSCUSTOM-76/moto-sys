@@ -260,7 +260,6 @@
                                 <option value="Filtro Oleo">Filtro de Óleo</option>
                                 <option value="Relação">Kit Relação (Corrente/Coroa/Pinhão)</option>
                                 <option value="Vela">Vela de Ignição</option>
-                                <option value="Pneu Dianteiro">Pneu Dianteiro</option>
                                 <option value="Pneu Traseiro">Pneu Traseiro</option>
                             </select>
                         </div>
@@ -308,13 +307,296 @@
         import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // CONFIGURAÇÃO DO SEU FIREBASE (INSIRA SUAS CHAVES REAIS AQUI!)
+        // CONFIGURAÇÃO DO SEU FIREBASE (LEMBRE-SE DE COLOCAR SUAS CHAVES REAIS AQUI!)
        const firebaseConfig = {
-            apiKey: "AIzaSyBr_NKOSzmh2CwbR7SYaLAk_0TsYe39VTY",
-            authDomain: "moto-sys.firebaseapp.com",
-            projectId: "moto-sys",
-            storageBucket: "moto-sys.firebasestorage.app",
-            messagingSenderId: "267462641413",
-            appId: "1:267462641413:web:f4d176ae31a2bdf970596c",
-            measurementId: "G-4CZD6SMLWZ"
+  apiKey: "AIzaSyBr_NKOSzmh2CwbR7SYaLAk_0TsYe39VTY",
+  authDomain: "moto-sys.firebaseapp.com",
+  projectId: "moto-sys",
+  storageBucket: "moto-sys.firebasestorage.app",
+  messagingSenderId: "267462641413",
+  appId: "1:267462641413:web:f4d176ae31a2bdf970596c",
+  measurementId: "G-4CZD6SMLWZ"
+};
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // ESTADO GLOBAL DA APLICAÇÃO
+        let currentUser = null;
+        let isLoginMode = true;
+        let activeMotoId = null;
+        let motosData = [];
+
+        // LIMITES TÉCNICOS DE MANUTENÇÃO (KM)
+        const LIMITES = {
+            "Oleo Motor": 3000,
+            "Filtro Oleo": 6000,
+            "Relação": 15000,
+            "Vela": 10000,
+            "Pneu Traseiro": 12000
         };
+
+        // --- CONTROLE DE AUTENTICAÇÃO ---
+        window.switchAuthMode = function(mode) {
+            isLoginMode = mode;
+            document.getElementById('tab-login').className = mode ? 'active' : '';
+            document.getElementById('tab-register').className = mode ? '' : 'active';
+            document.getElementById('auth-btn').innerText = mode ? 'Entrar no Sistema' : 'Criar Conta Técnica';
+            document.getElementById('auth-msg').innerText = mode ? 'Acesse sua garagem técnica de projetos' : 'Crie sua conta para gerenciar sua frota';
+        };
+
+        window.handleAuth = async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            
+            try {
+                if (isLoginMode) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                }
+            } catch (error) {
+                console.error("Erro na autenticação:", error);
+                alert("Erro: " + error.message);
+            }
+        };
+
+        window.logout = function() {
+            signOut(auth);
+        };
+
+        // ESCUTADOR DE ESTADO DE LOGIN
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('display-user-email').innerText = user.email;
+                initApp();
+            } else {
+                currentUser = null;
+                document.getElementById('auth-overlay').style.display = 'flex';
+                document.getElementById('display-user-email').innerText = '';
+                limparDadosInterface();
+            }
+        });
+
+        function limparDadosInterface() {
+            document.getElementById('global-moto-selector').innerHTML = '<option value="">Nenhuma moto cadastrada</option>';
+            document.getElementById('maint-cards-container').innerHTML = '';
+            document.getElementById('history-table-body').innerHTML = '';
+            activeMotoId = null;
+            motosData = [];
+        }
+
+        // --- INICIALIZAÇÃO DOS DADOS OTIMIZADOS ---
+        function initApp() {
+            const qMotos = query(
+                collection(db, "motos"), 
+                where("id_usuario", "==", currentUser.uid)
+            );
+
+            onSnapshot(qMotos, (snapshot) => {
+                const selector = document.getElementById('global-moto-selector');
+                selector.innerHTML = '';
+                motosData = [];
+
+                if (snapshot.empty) {
+                    selector.innerHTML = '<option value="">Nenhuma moto cadastrada</option>';
+                    limparPaineis();
+                    return;
+                }
+
+                snapshot.forEach((doc) => {
+                    const moto = { id: doc.id, ...doc.data() };
+                    motosData.push(moto);
+                    
+                    const opt = document.createElement('option');
+                    opt.value = moto.id;
+                    opt.innerText = `${moto.modelo} (${moto.ano})`;
+                    selector.appendChild(opt);
+                });
+
+                if (!activeMotoId || !motosData.find(m => m.id === activeMotoId)) {
+                    activeMotoId = motosData[0].id;
+                }
+                selector.value = activeMotoId;
+                carregarDadosMotoAtiva();
+            });
+        }
+
+        function limparPaineis() {
+            document.getElementById('maint-cards-container').innerHTML = '<p style="color: var(--text-muted)">Cadastre uma moto para visualizar o status.</p>';
+            document.getElementById('history-table-body').innerHTML = '<tr><td colspan="4" style="color: var(--text-muted); text-align: center;">Nenhum registro encontrado.</td></tr>';
+        }
+
+        window.setActiveMoto = function(id) {
+            if(!id) return;
+            activeMotoId = id;
+            carregarDadosMotoAtiva();
+        };
+
+        function carregarDadosMotoAtiva() {
+            if (!activeMotoId || !currentUser) return;
+
+            const motoAtiva = motosData.find(m => m.id === activeMotoId);
+            if (!motoAtiva) return;
+
+            const qManut = query(
+                collection(db, "manutencoes"),
+                where("id_usuario", "==", currentUser.uid),
+                where("id_moto", "==", activeMotoId),
+                orderBy("km_realizada", "desc")
+            );
+
+            onSnapshot(qManut, (snapshot) => {
+                const manutencoes = [];
+                snapshot.forEach((doc) => {
+                    manutencoes.push({ id: doc.id, ...doc.data() });
+                });
+
+                renderizarStatusPecas(motoAtiva, manutencoes);
+                renderizarHistorico(manutencoes);
+            });
+        }
+
+        // --- OPERAÇÕES DE BANCO DE DADOS ---
+        window.cadastrarMoto = async function(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const novaMoto = {
+                modelo: document.getElementById('moto-modelo').value,
+                ano: parseInt(document.getElementById('moto-ano').value),
+                odometro_atual: parseInt(document.getElementById('moto-km').value),
+                km_diaria_estimada: parseInt(document.getElementById('moto-media').value),
+                id_usuario: currentUser.uid
+            };
+
+            try {
+                await addDoc(collection(db, "motos"), novaMoto);
+                alert("Moto adicionada à sua garagem com sucesso!");
+                document.getElementById('form-moto').reset();
+            } catch (err) {
+                console.error(err);
+                alert("Erro ao salvar veículo: " + err.message);
+            }
+        };
+
+        window.cadastrarManutencao = async function(e) {
+            e.preventDefault();
+            if (!activeMotoId || !currentUser) {
+                alert("Por favor, selecione ou cadastre uma moto antes.");
+                return;
+            }
+
+            const novaManut = {
+                id_moto: activeMotoId,
+                id_usuario: currentUser.uid,
+                tipo_componente: document.getElementById('manut-tipo').value,
+                km_realizada: parseInt(document.getElementById('manut-km').value),
+                data_servico: document.getElementById('manut-data').value
+            };
+
+            try {
+                await addDoc(collection(db, "manutencoes"), novaManut);
+                alert("Serviço registrado com sucesso no banco!");
+                document.getElementById('form-manutencao').reset();
+            } catch (err) {
+                console.error(err);
+                alert("Erro ao lançar manutenção: " + err.message);
+            }
+        };
+
+        // --- RENDERIZADORES DE TELA ---
+        function renderizarStatusPecas(moto, manutencoes) {
+            const container = document.getElementById('maint-cards-container');
+            container.innerHTML = '';
+
+            Object.keys(LIMITES).forEach(tipo => {
+                const limite = LIMITES[tipo];
+                const ultimas = manutencoes.filter(m => m.tipo_componente === tipo);
+                const ultimaKm = ultimas.length > 0 ? ultimas[0].km_realizada : 0;
+                
+                const kmRodados = Math.max(0, moto.odometro_atual - ultimaKm);
+                let pct = Math.min(100, (kmRodados / limite) * 100);
+                let pctBarra = 100 - pct;
+
+                let statusTexto = "OK";
+                let statusClass = "status-ok";
+                let corBarra = "var(--success)";
+
+                if (pct >= 100) {
+                    statusTexto = "CRÍTICO";
+                    statusClass = "status-critical";
+                    corBarra = "var(--primary)";
+                } else if (pct >= 80) {
+                    statusTexto = "ALERTA";
+                    statusClass = "status-alert";
+                    corBarra = "#ffaa00";
+                }
+
+                const card = document.createElement('div');
+                card.className = 'maint-card';
+                card.innerHTML = `
+                    <div>
+                        <div class="maint-info">
+                            <span class="maint-name">${traduzirTipo(tipo)}</span>
+                            <span class="maint-status ${statusClass}">${statusTexto}</span>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: ${pctBarra}%; background-color: ${corBarra}"></div>
+                        </div>
+                    </div>
+                    <div class="maint-desc">
+                        Rodou <strong>${kmRodados} KM</strong> de um limite de ${limite} KM.<br>
+                        <span style="font-size:0.75rem; color: var(--text-muted)">Última troca em: ${ultimaKm} KM</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderizarHistorico(manutencoes) {
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = '';
+
+            if (manutencoes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="color: var(--text-muted); text-align: center;">Nenhum serviço registrado nesta moto.</td></tr>';
+                return;
+            }
+
+            manutencoes.forEach(m => {
+                const dataFormatada = new Date(m.data_servico + 'T00:00:00').toLocaleDateString('pt-BR');
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${dataFormatada}</strong></td>
+                    <td><span style="color: var(--primary); font-weight:600;">${traduzirTipo(m.tipo_componente)}</span></td>
+                    <td>${m.km_realizada} KM</td>
+                    <td><small style="color: var(--text-muted)">Registrado na base</small></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function traduzirTipo(tipo) {
+            const mapas = {
+                "Oleo Motor": "Óleo do Motor",
+                "Filtro Oleo": "Filtro de Óleo",
+                "Relação": "Kit Relação",
+                "Vela": "Vela de Ignição",
+                "Pneu Traseiro": "Pneu Traseiro"
+            };
+            return mapas[tipo] || tipo;
+        }
+
+        window.switchView = function(viewName, element) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            
+            document.getElementById(`view-${viewName}`).classList.add('active');
+            element.classList.add('active');
+        };
+    </script>
+</body>
+</html>
