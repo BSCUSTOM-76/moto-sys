@@ -1,10 +1,13 @@
 <!DOCTYPE html>
-<html>
-<head><meta charset="UTF-8"><title>Teste BS.CUSTOM</title></head>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>BS.CUSTOM — Oficina & Garagem</title>
+    </head>
 <body>
-    <div id="status">Iniciando...</div>
     <script type="module">
         import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const config = {
@@ -16,13 +19,14 @@
             appId: "1:267462641413:web:f4d176ae31a2bdf970596c"
         };
 
-        try {
-            const app = !getApps().length ? initializeApp(config) : getApps()[0];
-            const auth = getAuth(app);
-            document.getElementById('status').innerText = "Firebase OK! Sistema pronto para receber as funções.";
-        } catch (e) {
-            document.getElementById('status').innerText = "Erro: " + e.message;
-        }
+        // Inicialização que garante que o Firebase não duplique
+        const app = !getApps().length ? initializeApp(config) : getApps()[0];
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // COLE AQUI TODO O SEU JAVASCRIPT ORIGINAL 
+        // (Todas as funções que começam com window. ou function)
+        
     </script>
 </body>
 </html>
