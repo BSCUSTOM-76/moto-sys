@@ -2,69 +2,601 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>BS.CUSTOM — Garage Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BS.CUSTOM — Oficina & Garagem</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a1a">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
-        :root { --bg: #121212; --card: #1a1a1a; --primary: #ff5500; --text: #ffffff; }
-        body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; }
-        .hidden { display: none !important; }
-        .card { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
-        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
+        :root {
+            --bg-main: #121212;
+            --bg-card: #1a1a1a;
+            --bg-input: #242424;
+            --primary: #ff5500;
+            --primary-hover: #ff7733;
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --border: #2d2d2d;
+            --success: #00e676;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-main); display: flex; min-height: 100vh; overflow-x: hidden; }
+
+        /* MODAL DE AUTENTICAÇÃO */
+        #auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 10, 10, 0.95); z-index: 9999;
+            display: flex; justify-content: center; align-items: center; padding: 20px;
+        }
+        .auth-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            width: 100%; max-width: 420px; padding: 40px 30px; border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center;
+        }
+        .auth-brand { font-family: 'Orbitron', sans-serif; color: var(--primary); font-size: 2rem; margin-bottom: 5px; }
+        .auth-subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px; }
+        .auth-toggle { display: flex; background: var(--bg-main); border-radius: 8px; padding: 4px; margin-bottom: 25px; border: 1px solid var(--border); }
+        .auth-toggle button { flex: 1; padding: 10px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-radius: 6px; font-weight: 600; transition: 0.2s; }
+        .auth-toggle button.active { background: var(--primary); color: white; }
+        
+        /* INTERFACE PRINCIPAL - BARRA LATERAL COM FLEXBOX */
+        sidebar { 
+            width: 260px; 
+            background: var(--bg-card); 
+            border-right: 1px solid var(--border); 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between;
+            position: relative;
+            min-height: 100vh;
+        }
+        
+        .sidebar-top { padding: 30px 20px 20px 20px; }
+        
+        /* CABEÇALHO DA LOGO */
+        .sidebar-header { 
+            text-align: center; 
+            padding-bottom: 25px; 
+            border-bottom: 1px solid var(--border); 
+            margin-bottom: 30px; 
+        }
+        .sidebar-logo { 
+            max-width: 90px; 
+            height: auto; 
+            margin-bottom: 15px; 
+            display: block; 
+            margin-left: auto; 
+            margin-right: auto; 
+        }
+        .sidebar-brand { 
+            color: var(--primary); 
+            font-family: 'Impact', 'Arial Black', sans-serif; 
+            font-size: 1.7rem; 
+            letter-spacing: 2px; 
+            margin: 0; 
+            text-transform: uppercase; 
+        }
+        .sidebar-subtitle { 
+            color: #666; 
+            font-size: 0.75rem; 
+            letter-spacing: 1px; 
+            display: block; 
+            margin-top: 4px; 
+        }
+        
+        .nav-menu { display: flex; flex-direction: column; gap: 10px; }
+        .nav-item { display: flex; align-items: center; gap: 15px; padding: 14px 18px; color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; transition: 0.2s; cursor: pointer; }
+        .nav-item:hover, .nav-item.active { background: var(--bg-input); color: var(--text-main); }
+        .nav-item.active { border-left: 4px solid var(--primary); color: var(--primary); }
+        
+        .user-panel { border-top: 1px solid var(--border); padding-top: 20px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+        .user-email { font-size: 0.85rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .btn-logout { background: transparent; border: 1px solid #ff3333; color: #ff3333; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; transition: 0.2s; }
+        .btn-logout:hover { background: #ff3333; color: white; }
+
+        /* RODAPÉ DO BRUNO FIXO NO FIM */
+        .sidebar-footer { 
+            padding: 20px 15px; 
+            text-align: center; 
+            border-top: 1px solid var(--border); 
+            background-color: #111111; 
+        }
+        .footer-text { 
+            color: #555555; 
+            font-size: 0.75rem; 
+            font-family: 'Arial', sans-serif; 
+            margin: 0; 
+            letter-spacing: 0.5px; 
+        }
+        .footer-author { color: #888888; font-weight: bold; }
+
+        main { flex-grow: 1; padding: 40px; max-width: 1200px; margin: 0 auto; width: 100%; }
+        .view-section { display: none; }
+        .view-section.active { display: block; }
+
+        h2 { font-size: 1.8rem; margin-bottom: 30px; }
+        .grid-forms { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; }
+        
+        .card { background: var(--bg-card); border: 1px solid var(--border); padding: 30px; border-radius: 12px; margin-bottom: 30px; }
+        .card-title { font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select { width: 100%; background: var(--bg-input); border: 1px solid var(--border); padding: 12px 16px; border-radius: 8px; color: white; font-size: 1rem; transition: 0.2s; }
+        input:focus, select:focus { border-color: var(--primary); outline: none; }
+        
+        .btn-primary { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .btn-primary:hover { background: var(--primary-hover); }
+
+        .selector-box { background: var(--bg-card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; }
+        .selector-box div { flex-grow: 1; max-width: 400px; }
+
+        /* CARDS DE MANUTENÇÃO */
+        .maintenance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .maint-card { background: var(--bg-card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between; }
+        .maint-info { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .maint-name { font-weight: 700; font-size: 1.1rem; }
+        .maint-status { font-size: 0.85rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; }
+        .status-ok { background: rgba(0, 230, 118, 0.15); color: var(--success); }
+        .status-alert { background: rgba(255, 170, 0, 0.15); color: #ffaa00; }
+        .status-critical { background: rgba(255, 85, 0, 0.15); color: var(--primary); }
+        
+        .progress-container { background: var(--bg-input); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
+        .progress-bar { height: 100%; width: 0%; transition: width 0.5s ease; }
+        .maint-desc { font-size: 0.85rem; color: var(--text-muted); }
+
+        /* HISTÓRICO */
+        .history-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .history-table th, .history-table td { padding: 14px; text-align: left; border-bottom: 1px solid var(--border); }
+        .history-table th { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); min-height: auto; }
+            .grid-forms { grid-template-columns: 1fr; }
+            main { padding: 20px; }
+        }
     </style>
 </head>
 <body>
-    <div id="auth-overlay"><form id="auth-form"><input type="email" id="auth-email" placeholder="E-mail" required><br><input type="password" id="auth-password" placeholder="Senha" required><br><button type="submit">Entrar</button></form></div>
 
-    <main id="app-content" class="hidden">
-        <h1>Garagem Técnica</h1>
-        <select id="moto-selector"></select>
-        <div id="maint-cards"></div>
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <div class="auth-brand">BS.CUSTOM</div>
+            <div class="auth-subtitle" id="auth-msg">Acesse sua garagem técnica de projetos</div>
+            
+            <div class="auth-toggle">
+                <button id="tab-login" class="active" onclick="switchAuthMode(true)">LOGIN</button>
+                <button id="tab-register" onclick="switchAuthMode(false)">CADASTRAR</button>
+            </div>
+
+            <form id="auth-form" onsubmit="handleAuth(event)">
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="auth-email" required placeholder="seu@email.com">
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="auth-password" required placeholder="••••••••" minlength="6">
+                </div>
+                <button type="submit" class="btn-primary" id="auth-btn">Entrar no Sistema</button>
+            </form>
+        </div>
+    </div>
+
+    <sidebar>
+        <div class="sidebar-top">
+            <div class="sidebar-header">
+                <img src="logo.png" alt="BS.CUSTOM Logo" class="sidebar-logo">
+                <h1 class="sidebar-brand">BS.CUSTOM</h1>
+                <span class="sidebar-subtitle">v3.0 — garage control</span>
+            </div>
+
+            <div class="nav-menu">
+                <div class="nav-item active" onclick="switchView('garagem', this)"><i class="fa-solid fa-gauge"></i> Garagem</div>
+                <div class="nav-item" onclick="switchView('status', this)"><i class="fa-solid fa-wrench"></i> Status de Peças</div>
+                <div class="nav-item" onclick="switchView('historico', this)"><i class="fa-solid fa-history"></i> Histórico</div>
+            </div>
+            
+            <div class="user-panel">
+                <div class="user-email" id="display-user-email">Carregando...</div>
+                <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-sign-out-alt"></i> Sair</button>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <p class="footer-text">
+                Desenvolvedor <span class="footer-author">Bruno Sabanelli</span>
+            </p>
+        </div>
+    </sidebar>
+
+    <main>
+        <div class="selector-box">
+            <div>
+                <label>Moto Ativa na Oficina</label>
+                <select id="global-moto-selector" onchange="setActiveMoto(this.value)">
+                    <option value="">Nenhuma moto cadastrada</option>
+                </select>
+            </div>
+        </div>
+
+        <section id="view-garagem" class="view-section active">
+            <h2>Minha Garagem</h2>
+            <div class="grid-forms">
+                <div class="card">
+                    <div class="card-title"><i class="fa-solid fa-plus"></i> Adicionar Nova Moto</div>
+                    <form id="form-moto" onsubmit="cadastrarMoto(event)">
+                        <div class="form-group">
+                            <label>Modelo da Moto</label>
+                            <input type="text" id="moto-modelo" placeholder="Ex: Suzuki Intruder 125" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Ano</label>
+                            <input type="number" id="moto-ano" placeholder="Ex: 2013" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Odômetro Atual (KM)</label>
+                            <input type="number" id="moto-km" placeholder="Ex: 21000" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Média de KM Diária (Estimada)</label>
+                            <input type="number" id="moto-media" placeholder="Ex: 20" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Salvar na Garagem</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-title"><i class="fa-solid fa-oil-can"></i> Registrar Serviço / Manutenção</div>
+                    <form id="form-manutencao" onsubmit="cadastrarManutencao(event)">
+                        <div class="form-group">
+                            <label>Tipo de Componente</label>
+                            <select id="manut-tipo" required>
+                                <option value="Oleo Motor">Óleo do Motor</option>
+                                <option value="Filtro Oleo">Filtro de Óleo</option>
+                                <option value="Relação">Kit Relação (Corrente/Coroa/Pinhão)</option>
+                                <option value="Vela">Vela de Ignição</option>
+                                <option value="Pneu Traseiro">Pneu Traseiro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>KM Realizada</label>
+                            <input type="number" id="manut-km" placeholder="Ex: 20500" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Data do Serviço</label>
+                            <input type="date" id="manut-data" required>
+                        </div>
+                        <button type="submit" class="btn-primary">Lançar Manutenção</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-status" class="view-section">
+            <h2>Status de Peças & Consumíveis</h2>
+            <div class="maintenance-grid" id="maint-cards-container">
+                </div>
+        </section>
+
+        <section id="view-historico" class="view-section">
+            <h2>Histórico Completo de Serviços</h2>
+            <div class="card" style="padding: 10px; overflow-x: auto;">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Serviço / Componente</th>
+                            <th>KM do Evento</th>
+                            <th>Idade do Serviço</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body">
+                        </tbody>
+                </table>
+            </div>
+        </section>
     </main>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // COLOQUE SUAS CHAVES AQUI
-        const firebaseConfig = {
-            apiKey: "AIzaSyBr_NKOSzmh2CwbR7SYaLAk_0TsYe39VTY",
-            authDomain: "moto-sys.firebaseapp.com",
-            projectId: "moto-sys",
-            storageBucket: "moto-sys.firebasestorage.app",
-            messagingSenderId: "267462641413",
-            appId: "1:267462641413:web:f4d176ae31a2bdf970596c",
-            measurementId: "G-4CZD6SMLWZ"
-        };
-
+        // CONFIGURAÇÃO DO SEU FIREBASE (LEMBRE-SE DE COLOCAR SUAS CHAVES REAIS AQUI!)
+       const firebaseConfig = {
+  apiKey: "AIzaSyBr_NKOSzmh2CwbR7SYaLAk_0TsYe39VTY",
+  authDomain: "moto-sys.firebaseapp.com",
+  projectId: "moto-sys",
+  storageBucket: "moto-sys.firebasestorage.app",
+  messagingSenderId: "267462641413",
+  appId: "1:267462641413:web:f4d176ae31a2bdf970596c",
+  measurementId: "G-4CZD6SMLWZ"
+};
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // LOGIN
-        document.getElementById('auth-form').onsubmit = async (e) => {
-            e.preventDefault();
-            try { await signInWithEmailAndPassword(auth, document.getElementById('auth-email').value, document.getElementById('auth-password').value); }
-            catch (err) { alert("Erro: " + err.message); }
+        // ESTADO GLOBAL DA APLICAÇÃO
+        let currentUser = null;
+        let isLoginMode = true;
+        let activeMotoId = null;
+        let motosData = [];
+
+        // LIMITES TÉCNICOS DE MANUTENÇÃO (KM)
+        const LIMITES = {
+            "Oleo Motor": 3000,
+            "Filtro Oleo": 6000,
+            "Relação": 15000,
+            "Vela": 10000,
+            "Pneu Traseiro": 12000
         };
 
+        // --- CONTROLE DE AUTENTICAÇÃO ---
+        window.switchAuthMode = function(mode) {
+            isLoginMode = mode;
+            document.getElementById('tab-login').className = mode ? 'active' : '';
+            document.getElementById('tab-register').className = mode ? '' : 'active';
+            document.getElementById('auth-btn').innerText = mode ? 'Entrar no Sistema' : 'Criar Conta Técnica';
+            document.getElementById('auth-msg').innerText = mode ? 'Acesse sua garagem técnica de projetos' : 'Crie sua conta para gerenciar sua frota';
+        };
+
+        window.handleAuth = async function(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            
+            try {
+                if (isLoginMode) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                }
+            } catch (error) {
+                console.error("Erro na autenticação:", error);
+                alert("Erro: " + error.message);
+            }
+        };
+
+        window.logout = function() {
+            signOut(auth);
+        };
+
+        // ESCUTADOR DE ESTADO DE LOGIN
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                document.getElementById('auth-overlay').classList.add('hidden');
-                document.getElementById('app-content').classList.remove('hidden');
-                carregarDadosCompletos(user.uid);
+                currentUser = user;
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('display-user-email').innerText = user.email;
+                initApp();
+            } else {
+                currentUser = null;
+                document.getElementById('auth-overlay').style.display = 'flex';
+                document.getElementById('display-user-email').innerText = '';
+                limparDadosInterface();
             }
         });
 
-        function carregarDadosCompletos(uid) {
-            onSnapshot(query(collection(db, "motos"), where("id_usuario", "==", uid)), (snap) => {
-                const container = document.getElementById('maint-cards');
-                container.innerHTML = ''; 
-                snap.forEach(doc => {
-                    const moto = doc.data();
-                    container.innerHTML += `<div class="card"><strong>${moto.modelo}</strong><br>KM Atual: ${moto.odometro_atual}</div>`;
+        function limparDadosInterface() {
+            document.getElementById('global-moto-selector').innerHTML = '<option value="">Nenhuma moto cadastrada</option>';
+            document.getElementById('maint-cards-container').innerHTML = '';
+            document.getElementById('history-table-body').innerHTML = '';
+            activeMotoId = null;
+            motosData = [];
+        }
+
+        // --- INICIALIZAÇÃO DOS DADOS OTIMIZADOS ---
+        function initApp() {
+            const qMotos = query(
+                collection(db, "motos"), 
+                where("id_usuario", "==", currentUser.uid)
+            );
+
+            onSnapshot(qMotos, (snapshot) => {
+                const selector = document.getElementById('global-moto-selector');
+                selector.innerHTML = '';
+                motosData = [];
+
+                if (snapshot.empty) {
+                    selector.innerHTML = '<option value="">Nenhuma moto cadastrada</option>';
+                    limparPaineis();
+                    return;
+                }
+
+                snapshot.forEach((doc) => {
+                    const moto = { id: doc.id, ...doc.data() };
+                    motosData.push(moto);
+                    
+                    const opt = document.createElement('option');
+                    opt.value = moto.id;
+                    opt.innerText = `${moto.modelo} (${moto.ano})`;
+                    selector.appendChild(opt);
                 });
+
+                if (!activeMotoId || !motosData.find(m => m.id === activeMotoId)) {
+                    activeMotoId = motosData[0].id;
+                }
+                selector.value = activeMotoId;
+                carregarDadosMotoAtiva();
             });
         }
+
+        function limparPaineis() {
+            document.getElementById('maint-cards-container').innerHTML = '<p style="color: var(--text-muted)">Cadastre uma moto para visualizar o status.</p>';
+            document.getElementById('history-table-body').innerHTML = '<tr><td colspan="4" style="color: var(--text-muted); text-align: center;">Nenhum registro encontrado.</td></tr>';
+        }
+
+        window.setActiveMoto = function(id) {
+            if(!id) return;
+            activeMotoId = id;
+            carregarDadosMotoAtiva();
+        };
+
+        function carregarDadosMotoAtiva() {
+            if (!activeMotoId || !currentUser) return;
+
+            const motoAtiva = motosData.find(m => m.id === activeMotoId);
+            if (!motoAtiva) return;
+
+            const qManut = query(
+                collection(db, "manutencoes"),
+                where("id_usuario", "==", currentUser.uid),
+                where("id_moto", "==", activeMotoId),
+                orderBy("km_realizada", "desc")
+            );
+
+            onSnapshot(qManut, (snapshot) => {
+                const manutencoes = [];
+                snapshot.forEach((doc) => {
+                    manutencoes.push({ id: doc.id, ...doc.data() });
+                });
+
+                renderizarStatusPecas(motoAtiva, manutencoes);
+                renderizarHistorico(manutencoes);
+            });
+        }
+
+        // --- OPERAÇÕES DE BANCO DE DADOS ---
+        window.cadastrarMoto = async function(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const novaMoto = {
+                modelo: document.getElementById('moto-modelo').value,
+                ano: parseInt(document.getElementById('moto-ano').value),
+                odometro_atual: parseInt(document.getElementById('moto-km').value),
+                km_diaria_estimada: parseInt(document.getElementById('moto-media').value),
+                id_usuario: currentUser.uid
+            };
+
+            try {
+                await addDoc(collection(db, "motos"), novaMoto);
+                alert("Moto adicionada à sua garagem com sucesso!");
+                document.getElementById('form-moto').reset();
+            } catch (err) {
+                console.error(err);
+                alert("Erro ao salvar veículo: " + err.message);
+            }
+        };
+
+        window.cadastrarManutencao = async function(e) {
+            e.preventDefault();
+            if (!activeMotoId || !currentUser) {
+                alert("Por favor, selecione ou cadastre uma moto antes.");
+                return;
+            }
+
+            const novaManut = {
+                id_moto: activeMotoId,
+                id_usuario: currentUser.uid,
+                tipo_componente: document.getElementById('manut-tipo').value,
+                km_realizada: parseInt(document.getElementById('manut-km').value),
+                data_servico: document.getElementById('manut-data').value
+            };
+
+            try {
+                await addDoc(collection(db, "manutencoes"), novaManut);
+                alert("Serviço registrado com sucesso no banco!");
+                document.getElementById('form-manutencao').reset();
+            } catch (err) {
+                console.error(err);
+                alert("Erro ao lançar manutenção: " + err.message);
+            }
+        };
+
+        // --- RENDERIZADORES DE TELA ---
+        function renderizarStatusPecas(moto, manutencoes) {
+            const container = document.getElementById('maint-cards-container');
+            container.innerHTML = '';
+
+            Object.keys(LIMITES).forEach(tipo => {
+                const limite = LIMITES[tipo];
+                const ultimas = manutencoes.filter(m => m.tipo_componente === tipo);
+                const ultimaKm = ultimas.length > 0 ? ultimas[0].km_realizada : 0;
+                
+                const kmRodados = Math.max(0, moto.odometro_atual - ultimaKm);
+                let pct = Math.min(100, (kmRodados / limite) * 100);
+                let pctBarra = 100 - pct;
+
+                let statusTexto = "OK";
+                let statusClass = "status-ok";
+                let corBarra = "var(--success)";
+
+                if (pct >= 100) {
+                    statusTexto = "CRÍTICO";
+                    statusClass = "status-critical";
+                    corBarra = "var(--primary)";
+                } else if (pct >= 80) {
+                    statusTexto = "ALERTA";
+                    statusClass = "status-alert";
+                    corBarra = "#ffaa00";
+                }
+
+                const card = document.createElement('div');
+                card.className = 'maint-card';
+                card.innerHTML = `
+                    <div>
+                        <div class="maint-info">
+                            <span class="maint-name">${traduzirTipo(tipo)}</span>
+                            <span class="maint-status ${statusClass}">${statusTexto}</span>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar" style="width: ${pctBarra}%; background-color: ${corBarra}"></div>
+                        </div>
+                    </div>
+                    <div class="maint-desc">
+                        Rodou <strong>${kmRodados} KM</strong> de um limite de ${limite} KM.<br>
+                        <span style="font-size:0.75rem; color: var(--text-muted)">Última troca em: ${ultimaKm} KM</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderizarHistorico(manutencoes) {
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = '';
+
+            if (manutencoes.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="color: var(--text-muted); text-align: center;">Nenhum serviço registrado nesta moto.</td></tr>';
+                return;
+            }
+
+            manutencoes.forEach(m => {
+                const dataFormatada = new Date(m.data_servico + 'T00:00:00').toLocaleDateString('pt-BR');
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${dataFormatada}</strong></td>
+                    <td><span style="color: var(--primary); font-weight:600;">${traduzirTipo(m.tipo_componente)}</span></td>
+                    <td>${m.km_realizada} KM</td>
+                    <td><small style="color: var(--text-muted)">Registrado na base</small></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function traduzirTipo(tipo) {
+            const mapas = {
+                "Oleo Motor": "Óleo do Motor",
+                "Filtro Oleo": "Filtro de Óleo",
+                "Relação": "Kit Relação",
+                "Vela": "Vela de Ignição",
+                "Pneu Traseiro": "Pneu Traseiro"
+            };
+            return mapas[tipo] || tipo;
+        }
+
+        window.switchView = function(viewName, element) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            
+            document.getElementById(`view-${viewName}`).classList.add('active');
+            element.classList.add('active');
+        };
     </script>
 </body>
 </html>
