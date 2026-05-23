@@ -1,18 +1,21 @@
 {
-  "name": "MOTO//SYS — Garage",
-  "short_name": "MOTO//SYS",
-  "description": "Sistema de Gestão de Manutenção Preventiva para Motos",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#121212",
-  "theme_color": "#ff6b00",
-  "orientation": "portrait",
+  "short_name": "BS.CUSTOM",
+  "name": "BS.CUSTOM — Garage Control",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/784/784792.png",
-      "sizes": "512x512",
+      "src": "icon-192.png",
       "type": "image/png",
-      "purpose": "any maskable"
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
     }
-  ]
+  ],
+  "start_url": "index.html",
+  "background_color": "#121212",
+  "theme-color": "#1a1a1a",
+  "display": "standalone",
+  "orientation": "portrait"
 }
