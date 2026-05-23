@@ -12,13 +12,7 @@
     </style>
 </head>
 <body>
-    <div id="auth-overlay">
-        <form id="auth-form">
-            <input type="email" id="auth-email" placeholder="E-mail" required><br>
-            <input type="password" id="auth-password" placeholder="Senha" required><br>
-            <button type="submit">Entrar</button>
-        </form>
-    </div>
+    <div id="auth-overlay"><form id="auth-form"><input type="email" id="auth-email" placeholder="E-mail" required><br><input type="password" id="auth-password" placeholder="Senha" required><br><button type="submit">Entrar</button></form></div>
 
     <main id="app-content" class="hidden">
         <h1>Garagem Técnica</h1>
@@ -28,9 +22,10 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+        // COLOQUE SUAS CHAVES AQUI
         const firebaseConfig = {
             apiKey: "AIzaSyBr_NKOSzmh2CwbR7SYaLAk_0TsYe39VTY",
             authDomain: "moto-sys.firebaseapp.com",
@@ -45,6 +40,7 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        // LOGIN
         document.getElementById('auth-form').onsubmit = async (e) => {
             e.preventDefault();
             try { await signInWithEmailAndPassword(auth, document.getElementById('auth-email').value, document.getElementById('auth-password').value); }
@@ -55,19 +51,17 @@
             if (user) {
                 document.getElementById('auth-overlay').classList.add('hidden');
                 document.getElementById('app-content').classList.remove('hidden');
-                carregarMotos(user.uid);
+                carregarDadosCompletos(user.uid);
             }
         });
 
-        function carregarMotos(uid) {
+        function carregarDadosCompletos(uid) {
             onSnapshot(query(collection(db, "motos"), where("id_usuario", "==", uid)), (snap) => {
-                const sel = document.getElementById('moto-selector');
-                sel.innerHTML = '';
+                const container = document.getElementById('maint-cards');
+                container.innerHTML = ''; 
                 snap.forEach(doc => {
                     const moto = doc.data();
-                    sel.innerHTML += `<option value="${doc.id}">${moto.modelo}</option>`;
-                    // Aqui você chama a lógica de calcular o desgaste da moto
-                    document.getElementById('maint-cards').innerHTML = `<div class="card">Moto: ${moto.modelo} - KM: ${moto.odometro_atual}</div>`;
+                    container.innerHTML += `<div class="card"><strong>${moto.modelo}</strong><br>KM Atual: ${moto.odometro_atual}</div>`;
                 });
             });
         }
