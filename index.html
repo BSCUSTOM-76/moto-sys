@@ -10,6 +10,7 @@
         import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+        // Configuração
         const config = {
             apiKey: "AIzaSyBr_NKOSzmh2CwbR7SYaLAk_0TsYe39VTY",
             authDomain: "moto-sys.firebaseapp.com",
@@ -19,14 +20,19 @@
             appId: "1:267462641413:web:f4d176ae31a2bdf970596c"
         };
 
-        // Inicialização que garante que o Firebase não duplique
+        // Inicialização Segura
         const app = !getApps().length ? initializeApp(config) : getApps()[0];
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // COLE AQUI TODO O SEU JAVASCRIPT ORIGINAL 
-        // (Todas as funções que começam com window. ou function)
+        // Exportar para o escopo global para o seu HTML conseguir ler
+        window.db = db;
+        window.auth = auth;
+
+        console.log("Sistema BS.CUSTOM carregado com sucesso!");
         
+        // COLE O RESTANTE DO SEU JAVASCRIPT AQUI ABAIXO
+        // Certifique-se de que não haja um 'initializeApp' repetido aqui dentro
     </script>
 </body>
 </html>
