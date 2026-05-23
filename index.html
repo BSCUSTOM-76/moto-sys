@@ -4,16 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BS.CUSTOM — Oficina & Garagem</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #121212; color: #ffffff; font-family: sans-serif; padding: 20px; }
-        .card { background: #1a1a1a; padding: 15px; margin: 10px 0; border: 1px solid #333; border-radius: 8px; }
+        :root { --bg: #121212; --primary: #ff5500; --card: #1a1a1a; --text: #ffffff; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 20px; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; margin-bottom: 15px; border-left: 4px solid var(--primary); }
+        h1 { color: var(--primary); font-family: 'Orbitron', sans-serif; }
     </style>
 </head>
 <body>
 
-    <main id="app-content">
-        <h1>Garagem Técnica</h1>
-        <div id="maint-cards-container">Carregando dados...</div>
+    <main>
+        <h1>Garagem BS.CUSTOM</h1>
+        <div id="maint-cards-container">Carregando sua garagem...</div>
     </main>
 
     <script type="module">
@@ -33,30 +36,22 @@
         const app = !getApps().length ? initializeApp(config) : getApps()[0];
         const db = getFirestore(app);
 
-        // TESTE DE CONEXÃO E LEITURA
         const container = document.getElementById('maint-cards-container');
-        
-        try {
-            const colRef = collection(db, "motos");
-            onSnapshot(colRef, (snapshot) => {
-                container.innerHTML = ""; // Limpa o "Carregando..."
-                if (snapshot.empty) {
-                    container.innerHTML = "<p>Nenhuma moto cadastrada no banco de dados.</p>";
-                } else {
-                    snapshot.forEach((doc) => {
-                        const data = doc.data();
-                        const div = document.createElement('div');
-                        div.className = 'card';
-                        div.innerHTML = `<strong>${data.modelo || 'Moto sem nome'}</strong>`;
-                        container.appendChild(div);
-                    });
-                }
-            }, (err) => {
-                container.innerHTML = "Erro ao ler banco: " + err.message;
+
+        // Carrega as motos do Firestore
+        onSnapshot(collection(db, "motos"), (snapshot) => {
+            container.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const moto = doc.data();
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `
+                    <h3>${moto.modelo || 'Sem Modelo'}</h3>
+                    <p>KM Atual: ${moto.km || 0}</p>
+                `;
+                container.appendChild(div);
             });
-        } catch (e) {
-            container.innerHTML = "Erro no script: " + e.message;
-        }
+        });
     </script>
 </body>
 </html>
