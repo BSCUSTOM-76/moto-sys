@@ -549,7 +549,7 @@
 
             document.getElementById('info-km-atual').innerText = `${motoAtiva.odometro_atual} KM`;
 
-            // 1. Escuta de Manutenções
+            // 1. Escuta de Manutenções (CORREÇÃO da função para evitar travamentos)
             const qManut = query(
                 collection(db, "manutencoes"),
                 where("id_usuario", "==", currentUser.uid),
@@ -559,12 +559,13 @@
 
             onSnapshot(qManut, (snapshotManut) => {
                 const manutencoes = [];
-                snapshotManutDocument(snapshotManut);
                 snapshotManut.forEach((doc) => { manutencoes.push({ id: doc.id, ...doc.data() }); });
                 processarAlertasEManutencoes(motoAtiva, manutencoes);
+            }, (error) => {
+                console.error("Erro na escuta de manutenções:", error);
             });
 
-            // 2. Escuta de Abastecimentos (CORREÇÃO: Removido orderBy do banco para evitar bloqueio silencioso)
+            // 2. Escuta de Abastecimentos (Ordenada na memória)
             const qFuel = query(
                 collection(db, "abastecimentos"),
                 where("id_usuario", "==", currentUser.uid),
@@ -575,7 +576,6 @@
                 let abastecimentos = [];
                 snapshotFuel.forEach((doc) => { abastecimentos.push({ id: doc.id, ...doc.data() }); });
                 
-                // Ordena na memória local (Crescente por KM para os cálculos de média)
                 abastecimentos.sort((a, b) => a.km_atual - b.km_atual);
                 
                 calcularMediaCombustivel(abastecimentos, motoAtiva.ultimo_reset_media);
@@ -633,7 +633,6 @@
             }
         }
 
-        // CORREÇÃO E FINALIZAÇÃO: Função de cadastro robusta gravando fuso horário local
         window.cadastrarAbastecimento = async function(e) {
             e.preventDefault();
             if (!activeMotoId) return alert("Selecione uma moto ativa.");
@@ -646,7 +645,6 @@
                 return alert("Preencha KM e Litros com valores válidos.");
             }
 
-            // Monta String de Data Local compatível (AAAA-MM-DDTHH:mm:ss)
             const agora = new Date();
             const ano = agora.getFullYear();
             const mes = String(agora.getMonth() + 1).padStart(2, '0');
@@ -681,8 +679,7 @@
             }
         };
 
-        // INCLUSÃO: Renderiza a tabela de abastecimentos ordenando de forma decrescente para visualização
-        function renderizerResumoAbastecimentos(abastecimentos) {
+        function renderizarResumoAbastecimentos(abastecimentos) {
             const tbody = document.getElementById('fuel-table-body');
             tbody.innerHTML = '';
 
@@ -691,7 +688,6 @@
                 return;
             }
 
-            // Clona e ordena de forma decrescente para exibir o último abastecimento no topo da tabela
             const listaVisualizacao = [...abastecimentos].sort((a, b) => b.km_atual - a.km_atual);
 
             listaVisualizacao.forEach(f => {
@@ -723,7 +719,6 @@
             });
         }
 
-        // INCLUSÃO: Deletar registros de abastecimento
         window.excluirAbastecimento = async function(id) {
             if (confirm("Tem certeza que deseja remover este registro de abastecimento?")) {
                 try {
@@ -748,7 +743,6 @@
             }
         };
 
-        // Funções de manutenção fictícias/padrão para evitar quebras de chamadas internas
         function processarAlertasEManutencoes(moto, manutencoes) {
             const container = document.getElementById('maint-cards-container');
             const historyBody = document.getElementById('history-table-body');
@@ -766,6 +760,7 @@
                 const limite = LIMITES[tipo];
                 let pct = (kmRodada / limite) * 100;
                 if(pct > 100) pct = 100;
+                if(pct < 0) pct = 0;
 
                 let statusClass = "status-ok";
                 let barColor = "var(--success)";
