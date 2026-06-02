@@ -22,7 +22,6 @@
             --success: #00e676;
             --danger: #ff3333;
             --danger-hover: #ff5555;
-            --warning: #ffaa00;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
@@ -166,44 +165,19 @@
         .btn-delete-moto:hover:not(:disabled) { background: var(--danger); color: white; }
         .btn-delete-moto:disabled { opacity: 0.25; cursor: not-allowed; border-color: #333; color: #555; }
 
-        /* CARDS DE MANUTENÇÃO REESTRUTURADOS */
-        .maintenance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
-        .maint-card { background: var(--bg-card); border: 1px solid var(--border); padding: 22px; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 15px; }
-        .maint-info { display: flex; justify-content: space-between; align-items: flex-start; }
+        /* CARDS DE MANUTENÇÃO */
+        .maintenance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .maint-card { background: var(--bg-card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between; }
+        .maint-info { display: flex; justify-content: space-between; margin-bottom: 15px; }
         .maint-name { font-weight: 700; font-size: 1.1rem; }
-        .maint-status { font-size: 0.85rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; text-align: right; }
+        .maint-status { font-size: 0.85rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; }
         .status-ok { background: rgba(0, 230, 118, 0.15); color: var(--success); }
-        .status-alert { background: rgba(255, 170, 0, 0.15); color: var(--warning); }
+        .status-alert { background: rgba(255, 170, 0, 0.15); color: #ffaa00; }
         .status-critical { background: rgba(255, 85, 0, 0.15); color: var(--primary); }
         
-        .progress-container { background: var(--bg-input); height: 8px; border-radius: 4px; overflow: hidden; margin: 5px 0; }
+        .progress-container { background: var(--bg-input); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
         .progress-bar { height: 100%; width: 0%; transition: width 0.5s ease; }
-        .maint-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
-        
-        /* BOTÃO DE TROCA DIRETA NO CARD */
-        .btn-maint-action {
-            width: 100%;
-            background: #242424;
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .btn-maint-action:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            background: rgba(255, 85, 0, 0.05);
-        }
+        .maint-desc { font-size: 0.85rem; color: var(--text-muted); }
 
         /* HISTÓRICO */
         .history-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -401,7 +375,7 @@
             isLoginMode = mode;
             document.getElementById('tab-login').className = mode ? 'active' : '';
             document.getElementById('tab-register').className = mode ? '' : 'active';
-            document.getElementById('auth-btn').innerText = mode ? 'Entrar no Sistema' : 'Criar Conta Técnico';
+            document.getElementById('auth-btn').innerText = mode ? 'Entrar no Sistema' : 'Criar Conta Técnica';
             document.getElementById('auth-msg').innerText = mode ? 'Acesse sua garagem técnica de projetos' : 'Crie sua conta para gerenciar sua frota';
         };
 
@@ -518,44 +492,9 @@
                     manutencoes.push({ id: doc.id, ...doc.data() });
                 });
 
-                processarAlertasEManutencoes(motoAtiva, manutencoes);
+                renderizarStatusPecas(motoAtiva, manutencoes);
+                renderizarHistorico(manutencoes);
             });
-        }
-
-        function processarAlertasEManutencoes(moto, manutencoes) {
-            let componentesCriticos = [];
-
-            Object.keys(LIMITES).forEach(tipo => {
-                const limite = LIMITES[tipo];
-                const ultimas = manutencoes.filter(m => m.tipo_componente === tipo);
-                const ultimaKm = ultimas.length > 0 ? ultimas[0].km_realizada : 0;
-                
-                const kmRodados = Math.max(0, moto.odometro_atual - ultimaKm);
-                const kmRestantes = limite - kmRodados;
-
-                if (kmRestantes <= 50) {
-                    componentesCriticos.push({
-                        nome: traduzirTipo(tipo),
-                        restante: kmRestantes
-                    });
-                }
-            });
-
-            if (componentesCriticos.length > 0) {
-                let msg = `⚠️ ALERTA DE MANUTENÇÃO — ${moto.modelo} ⚠️\n\n`;
-                componentesCriticos.forEach(c => {
-                    if (c.restante <= 0) {
-                        msg += `• ${c.nome}: VENCIDO há ${Math.abs(c.restante)} KM!\n`;
-                    } else {
-                        msg += `• ${c.nome}: Faltam apenas ${c.restante} KM para o limite!\n`;
-                    }
-                });
-                msg += `\nPrograme a revisão na oficina técnica da BS.CUSTOM.`;
-                alert(msg);
-            }
-
-            renderizarStatusPecas(moto, manutencoes);
-            renderizarHistorico(manutencoes);
         }
 
         window.cadastrarMoto = async function(e) {
@@ -613,53 +552,7 @@
             }
         };
 
-        // NOVA FUNÇÃO: PERMITE EDITAR/REGISTRAR A TROCA DIRETAMENTE DO CARD DE STATUS
-        window.editarTrocaComponente = async function(tipo) {
-            if (!activeMotoId || !currentUser) return;
-            
-            const motoAtiva = motosData.find(m => m.id === activeMotoId);
-            const nomeComponente = traduzirTipo(tipo);
-            
-            // Pergunta a KM do serviço
-            const kmInput = prompt(`[BS.CUSTOM] Informe a KM que a moto estava ao trocar: ${nomeComponente}`, motoAtiva ? motoAtiva.odometro_atual : "");
-            if (kmInput === null || kmInput.trim() === "") return; // Cancelou
-            
-            const kmRealizada = parseInt(kmInput);
-            if (isNaN(kmRealizada) || kmRealizada < 0) {
-                alert("Por favor, informe um número de quilometragem válido.");
-                return;
-            }
-
-            // Define a data atual no formato YYYY-MM-DD
-            const hoje = new Date().toISOString().split('T')[0];
-            const dataInput = prompt(`Confirme a data da manutenção (Ano-Mês-Dia):`, hoje);
-            if (dataInput === null || dataInput.trim() === "") return;
-
-            const novaManut = {
-                id_moto: activeMotoId,
-                id_usuario: currentUser.uid,
-                tipo_componente: tipo,
-                km_realizada: kmRealizada,
-                data_servico: dataInput
-            };
-
-            try {
-                // Adiciona o documento de manutenção
-                await addDoc(collection(db, "manutencoes"), novaManut);
-                
-                // Se a KM digitada for maior que o odômetro atual da moto, atualiza a moto automaticamente
-                if (motoAtiva && kmRealizada > motoAtiva.odometro_atual) {
-                    const motoRef = doc(db, "motos", activeMotoId);
-                    await updateDoc(motoRef, { odometro_atual: kmRealizada });
-                }
-
-                alert(`Status do componente "${nomeComponente}" atualizado com sucesso!`);
-            } catch (err) {
-                console.error("Erro ao atualizar diretamente pelo status: ", err);
-                alert("Erro ao salvar serviço: " + err.message);
-            }
-        };
-
+        // FUNÇÃO PARA EXCLUIR A MOTO ATIVA
         window.excluirMotoAtiva = async function() {
             if (!activeMotoId || !currentUser) return;
 
@@ -692,8 +585,6 @@
                 const ultimaKm = ultimas.length > 0 ? ultimas[0].km_realizada : 0;
                 
                 const kmRodados = Math.max(0, moto.odometro_atual - ultimaKm);
-                const kmRestantes = limite - kmRodados;
-                
                 let pctUtilizada = Math.min(100, (kmRodados / limite) * 100);
                 let pctBarraRestante = 100 - pctUtilizada;
 
@@ -701,14 +592,14 @@
                 let statusClass = "status-ok";
                 let corBarra = "var(--success)";
 
-                if (kmRestantes <= 50) {
-                    statusTexto = kmRestantes <= 0 ? "VENCIDO" : `TROCAR AGORA (-${kmRestantes} KM)`;
+                if (pctUtilizada >= 100) {
+                    statusTexto = "CRÍTICO";
                     statusClass = "status-critical";
                     corBarra = "var(--primary)";
                 } else if (pctUtilizada >= 80) {
                     statusTexto = "ALERTA";
                     statusClass = "status-alert";
-                    corBarra = "var(--warning)";
+                    corBarra = "#ffaa00";
                 }
 
                 const card = document.createElement('div');
@@ -727,9 +618,6 @@
                         Rodou <strong>${kmRodados} KM</strong> de um limite de ${limite} KM.<br>
                         <span style="font-size:0.75rem; color: var(--text-muted)">Última troca em: ${ultimaKm} KM</span>
                     </div>
-                    <button class="btn-maint-action" onclick="editarTrocaComponente('${tipo}')">
-                        <i class="fa-solid fa-pen-to-square"></i> Registrar Troca
-                    </button>
                 `;
                 container.appendChild(card);
             });
