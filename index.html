@@ -576,13 +576,18 @@
         function calcularMediaCombustivel(abastecimentos, timestampReset) {
             const displayMedia = document.getElementById('info-media-combustivel');
             
-            // Filtra abastecimentos caso a média tenha sido "zerada" (ignora os anteriores ao reset)
+            // Filtra abastecimentos caso a média tenha sido "zerada"
             let dadosFiltrados = abastecimentos;
             if (timestampReset) {
-                const dataReset = new Date(timestampReset);
-                dadosFiltrados = abastecimentos.filter(f => new Date(f.data) >= dataReset);
+                const timeReset = new Date(timestampReset).getTime();
+                // Ignora qualquer abastecimento feito ANTES do momento do reset
+                dadosFiltrados = abastecimentos.filter(f => {
+                    if (!f.data) return true;
+                    return new Date(f.data).getTime() >= timeReset;
+                });
             }
 
+            // Precisamos de pelo menos 2 abastecimentos APÓS o reset para calcular uma média de variação de KM
             if (dadosFiltrados.length < 2) {
                 displayMedia.innerText = "-- KM/L";
                 return;
@@ -591,11 +596,12 @@
             let quilometragemTotal = 0;
             let litrosConsumidos = 0;
 
+            // Percorre os dados filtrados calculando a diferença entre os tanques
             for (let i = 1; i < dadosFiltrados.length; i++) {
                 const kmDiferenca = dadosFiltrados[i].km_atual - dadosFiltrados[i-1].km_atual;
                 if (kmDiferenca > 0) {
                     quilometragemTotal += kmDiferenca;
-                    litrosConsumidos += dadosFiltrados[i].litros;
+                    litrosConsumidos += dadosFiltrados[i].litros; // Soma o combustível que encheu o tanque para rodar essa diferença
                 }
             }
 
@@ -609,14 +615,17 @@
 
         // FUNÇÃO PARA MARCAR O RESET DO ODÔMETRO PARCIAL (TRIP)
         window.zerarTripMedia = async function() {
-            if (!activeMotoId) return;
+            if (!activeMotoId) return alert("Nenhuma moto ativa selecionada.");
             if (confirm("Deseja zerar o odômetro de média? Os próximos abastecimentos criarão um novo cálculo do zero.")) {
                 try {
+                    // Usamos o tempo atual exato para o corte
                     const agoraISO = new Date().toISOString();
+                    
                     await updateDoc(doc(db, "motos", activeMotoId), {
                         ultimo_reset_media: agoraISO
                     });
-                    alert("Odômetro de média zerado com sucesso!");
+                    
+                    alert("Odômetro de média zerado com sucesso! A partir do próximo abastecimento uma nova média será calculada.");
                 } catch (err) {
                     alert("Erro ao zerar odômetro: " + err.message);
                 }
