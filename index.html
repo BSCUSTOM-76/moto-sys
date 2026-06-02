@@ -22,6 +22,8 @@
             --success: #00e676;
             --danger: #ff3333;
             --danger-hover: #ff5555;
+            --warning: #ffaa00;
+            --info: #00b0ff;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
@@ -120,20 +122,29 @@
         .view-section.active { display: block; }
 
         h2 { font-size: 1.8rem; margin-bottom: 30px; }
-        .grid-forms { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; }
         
-        .card { background: var(--bg-card); border: 1px solid var(--border); padding: 30px; border-radius: 12px; margin-bottom: 30px; }
+        /* GRID LAYOUT DA GARAGEM ADAPTADO PARA 3 COLUNAS */
+        .grid-forms { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; align-items: start; }
+        
+        .card { background: var(--bg-card); border: 1px solid var(--border); padding: 25px; border-radius: 12px; margin-bottom: 25px; }
         .card-title { font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
         
-        .form-group { margin-bottom: 20px; }
-        label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-        input, select { width: 100%; background: var(--bg-input); border: 1px solid var(--border); padding: 12px 16px; border-radius: 8px; color: white; font-size: 1rem; transition: 0.2s; }
+        /* CARD EXCLUSIVO DE MÉDIA/INFO */
+        .info-panel-box { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .info-mini-card { background: var(--bg-card); border: 1px solid var(--border); padding: 15px; border-radius: 10px; text-align: center; }
+        .info-mini-card span { display: block; font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 5px; }
+        .info-mini-card strong { font-family: 'Orbitron', sans-serif; font-size: 1.4rem; color: var(--info); }
+        .info-mini-card strong.fuel-calc { color: var(--success); }
+
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select { width: 100%; background: var(--bg-input); border: 1px solid var(--border); padding: 10px 14px; border-radius: 8px; color: white; font-size: 0.95rem; transition: 0.2s; }
         input:focus, select:focus { border-color: var(--primary); outline: none; }
         
-        .btn-primary { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        .btn-primary { width: 100%; background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
         .btn-primary:hover { background: var(--primary-hover); }
 
-        /* SELETOR GLOBAL REESTRUTURADO */
+        /* SELETOR GLOBAL */
         .selector-box { 
             background: var(--bg-card); 
             border: 1px solid var(--border); 
@@ -166,18 +177,23 @@
         .btn-delete-moto:disabled { opacity: 0.25; cursor: not-allowed; border-color: #333; color: #555; }
 
         /* CARDS DE MANUTENÇÃO */
-        .maintenance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .maint-card { background: var(--bg-card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between; }
-        .maint-info { display: flex; justify-content: space-between; margin-bottom: 15px; }
+        .maintenance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+        .maint-card { background: var(--bg-card); border: 1px solid var(--border); padding: 22px; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between; gap: 15px; }
+        .maint-info { display: flex; justify-content: space-between; align-items: flex-start; }
         .maint-name { font-weight: 700; font-size: 1.1rem; }
-        .maint-status { font-size: 0.85rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; }
+        .maint-status { font-size: 0.85rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; text-align: right; }
         .status-ok { background: rgba(0, 230, 118, 0.15); color: var(--success); }
-        .status-alert { background: rgba(255, 170, 0, 0.15); color: #ffaa00; }
+        .status-alert { background: rgba(255, 170, 0, 0.15); color: var(--warning); }
         .status-critical { background: rgba(255, 85, 0, 0.15); color: var(--primary); }
         
-        .progress-container { background: var(--bg-input); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
+        .progress-container { background: var(--bg-input); height: 8px; border-radius: 4px; overflow: hidden; margin: 5px 0; }
         .progress-bar { height: 100%; width: 0%; transition: width 0.5s ease; }
-        .maint-desc { font-size: 0.85rem; color: var(--text-muted); }
+        .maint-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
+        
+        .btn-maint-action {
+            width: 100%; background: #242424; border: 1px solid var(--border); color: var(--text-main); padding: 10px; border-radius: 6px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .btn-maint-action:hover { border-color: var(--primary); color: var(--primary); background: rgba(255, 85, 0, 0.05); }
 
         /* HISTÓRICO */
         .history-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -225,7 +241,7 @@
             <div class="sidebar-header">
                 <img src="logo.png" alt="BS.CUSTOM Logo" class="sidebar-logo">
                 <h1 class="sidebar-brand">BS.CUSTOM</h1>
-                <span class="sidebar-subtitle">v3.0 — garage control</span>
+                <span class="sidebar-subtitle">v3.5 — garage control</span>
             </div>
 
             <div class="nav-menu">
@@ -260,9 +276,22 @@
             </button>
         </div>
 
+        <!-- VISUALIZAÇÃO DA GARAGEM -->
         <section id="view-garagem" class="view-section active">
-            <h2>Minha Garagem</h2>
+            <!-- PAINEL DE INFORMAÇÕES DINÂMICAS -->
+            <div class="info-panel-box">
+                <div class="info-mini-card">
+                    <span>Odômetro Atual</span>
+                    <strong id="info-km-atual">0 KM</strong>
+                </div>
+                <div class="info-mini-card">
+                    <span>Média Geral Consumo</span>
+                    <strong id="info-media-combustivel" class="fuel-calc">-- KM/L</strong>
+                </div>
+            </div>
+
             <div class="grid-forms">
+                <!-- FORMULÁRIO 1: NOVA MOTO -->
                 <div class="card">
                     <div class="card-title"><i class="fa-solid fa-plus"></i> Adicionar Nova Moto</div>
                     <form id="form-moto" onsubmit="cadastrarMoto(event)">
@@ -275,7 +304,7 @@
                             <input type="number" id="moto-ano" placeholder="Ex: 2013" required>
                         </div>
                         <div class="form-group">
-                            <label>Odômetro Atual (KM)</label>
+                            <label>Odômetro Inicial (KM)</label>
                             <input type="number" id="moto-km" placeholder="Ex: 21000" required>
                         </div>
                         <div class="form-group">
@@ -286,8 +315,9 @@
                     </form>
                 </div>
 
+                <!-- FORMULÁRIO 2: MANUTENÇÃO -->
                 <div class="card">
-                    <div class="card-title"><i class="fa-solid fa-oil-can"></i> Registrar Serviço / Manutenção</div>
+                    <div class="card-title"><i class="fa-solid fa-oil-can"></i> Registrar Oficina</div>
                     <form id="form-manutencao" onsubmit="cadastrarManutencao(event)">
                         <div class="form-group">
                             <label>Tipo de Componente</label>
@@ -309,6 +339,26 @@
                             <input type="date" id="manut-data" required>
                         </div>
                         <button type="submit" class="btn-primary">Lançar Manutenção</button>
+                    </form>
+                </div>
+
+                <!-- FORMULÁRIO 3: NOVO ABASTECIMENTO (ADICIONADO) -->
+                <div class="card">
+                    <div class="card-title"><i class="fa-solid fa-gas-pump"></i> Registrar Abastecimento</div>
+                    <form id="form-abastecimento" onsubmit="cadastrarAbastecimento(event)">
+                        <div class="form-group">
+                            <label>KM Atual no Painel</label>
+                            <input type="number" id="fuel-km" placeholder="Ex: 21250" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Litros Abastecidos</label>
+                            <input type="number" step="0.01" id="fuel-litros" placeholder="Ex: 8.50" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Valor Total Pago (R$)</label>
+                            <input type="number" step="0.01" id="fuel-valor" placeholder="Ex: 45.50">
+                        </div>
+                        <button type="submit" class="btn-primary" style="background-color: #0091ea;">Lançar Combustível</button>
                     </form>
                 </div>
             </div>
@@ -342,7 +392,6 @@
         import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // CONFIGURAÇÃO DO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBr_NKOSzmh2CwbR7SYaLAk_0TsYe39VTY",
             authDomain: "moto-sys.firebaseapp.com",
@@ -383,22 +432,13 @@
             e.preventDefault();
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-password').value;
-            
             try {
-                if (isLoginMode) {
-                    await signInWithEmailAndPassword(auth, email, password);
-                } else {
-                    await createUserWithEmailAndPassword(auth, email, password);
-                }
-            } catch (error) {
-                console.error("Erro na autenticação:", error);
-                alert("Erro: " + error.message);
-            }
+                if (isLoginMode) { await signInWithEmailAndPassword(auth, email, password); } 
+                else { await createUserWithEmailAndPassword(auth, email, password); }
+            } catch (error) { alert("Erro: " + error.message); }
         };
 
-        window.logout = function() {
-            signOut(auth);
-        };
+        window.logout = function() { signOut(auth); };
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -409,7 +449,6 @@
             } else {
                 currentUser = null;
                 document.getElementById('auth-overlay').style.display = 'flex';
-                document.getElementById('display-user-email').innerText = '';
                 limparDadosInterface();
             }
         });
@@ -419,16 +458,14 @@
             document.getElementById('maint-cards-container').innerHTML = '';
             document.getElementById('history-table-body').innerHTML = '';
             document.getElementById('btn-deletar-moto').disabled = true;
+            document.getElementById('info-km-atual').innerText = '0 KM';
+            document.getElementById('info-media-combustivel').innerText = '-- KM/L';
             activeMotoId = null;
             motosData = [];
         }
 
         function initApp() {
-            const qMotos = query(
-                collection(db, "motos"), 
-                where("id_usuario", "==", currentUser.uid)
-            );
-
+            const qMotos = query(collection(db, "motos"), where("id_usuario", "==", currentUser.uid));
             onSnapshot(qMotos, (snapshot) => {
                 const selector = document.getElementById('global-moto-selector');
                 const btnDeletar = document.getElementById('btn-deletar-moto');
@@ -443,11 +480,9 @@
                 }
 
                 btnDeletar.disabled = false;
-
                 snapshot.forEach((doc) => {
                     const moto = { id: doc.id, ...doc.data() };
                     motosData.push(moto);
-                    
                     const opt = document.createElement('option');
                     opt.value = moto.id;
                     opt.innerText = `${moto.modelo} (${moto.ano})`;
@@ -475,10 +510,12 @@
 
         function carregarDadosMotoAtiva() {
             if (!activeMotoId || !currentUser) return;
-
             const motoAtiva = motosData.find(m => m.id === activeMotoId);
             if (!motoAtiva) return;
 
+            document.getElementById('info-km-atual').innerText = `${motoAtiva.odometro_atual} KM`;
+
+            // Escuta Manutenções
             const qManut = query(
                 collection(db, "manutencoes"),
                 where("id_usuario", "==", currentUser.uid),
@@ -486,21 +523,85 @@
                 orderBy("km_realizada", "desc")
             );
 
-            onSnapshot(qManut, (snapshot) => {
+            onSnapshot(qManut, (snapshotManut) => {
                 const manutencoes = [];
-                snapshot.forEach((doc) => {
-                    manutencoes.push({ id: doc.id, ...doc.data() });
-                });
+                snapshotManut.forEach((doc) => { manutencoes.push({ id: doc.id, ...doc.data() }); });
+                
+                // Escuta Abastecimentos para processar a média junto
+                const qFuel = query(
+                    collection(db, "abastecimentos"),
+                    where("id_usuario", "==", currentUser.uid),
+                    where("id_moto", "==", activeMotoId),
+                    orderBy("km_atual", "asc")
+                );
 
-                renderizarStatusPecas(motoAtiva, manutencoes);
-                renderizarHistorico(manutencoes);
+                onSnapshot(qFuel, (snapshotFuel) => {
+                    const abastecimentos = [];
+                    snapshotFuel.forEach((doc) => { abastecimentos.push({ id: doc.id, ...doc.data() }); });
+                    
+                    calcularMediaCombustivel(abastecimentos);
+                    processarAlertasEManutencoes(motoAtiva, manutencoes);
+                });
             });
+        }
+
+        // FUNÇÃO DE CÁLCULO DE CONSUMO DE COMBUSTÍVEL
+        function calcularMediaCombustivel(abastecimentos) {
+            const displayMedia = document.getElementById('info-media-combustivel');
+            
+            if (abastecimentos.length < 2) {
+                displayMedia.innerText = "-- KM/L";
+                return;
+            }
+
+            let quilometragemTotal = 0;
+            let litrosConsumidos = 0;
+
+            // Calcula a diferença de KM entre os abastecimentos e soma os litros
+            for (let i = 1; i < abastecimentos.length; i++) {
+                const kmDiferenca = abastecimentos[i].km_atual - abastecimentos[i-1].km_atual;
+                if (kmDiferenca > 0) {
+                    quilometragemTotal += kmDiferenca;
+                    litrosConsumidos += abastecimentos[i].litros;
+                }
+            }
+
+            if (litrosConsumidos > 0 && quilometragemTotal > 0) {
+                const mediaGeral = quilometragemTotal / litrosConsumidos;
+                displayMedia.innerText = `${mediaGeral.toFixed(2)} KM/L`;
+            } else {
+                displayMedia.innerText = "-- KM/L";
+            }
+        }
+
+        function processarAlertasEManutencoes(moto, manutencoes) {
+            let componentesCriticos = [];
+            Object.keys(LIMITES).forEach(tipo => {
+                const limite = LIMITES[tipo];
+                const ultimas = manutencoes.filter(m => m.tipo_componente === tipo);
+                const ultimaKm = ultimas.length > 0 ? ultimas[0].km_realizada : 0;
+                const kmRodados = Math.max(0, moto.odometro_atual - ultimaKm);
+                const kmRestantes = limite - kmRodados;
+
+                if (kmRestantes <= 50) {
+                    componentesCriticos.push({ nome: traduzirTipo(tipo), restante: kmRestantes });
+                }
+            });
+
+            if (componentesCriticos.length > 0) {
+                let msg = `⚠️ ALERTA DE MANUTENÇÃO — ${moto.modelo} ⚠️\n\n`;
+                componentesCriticos.forEach(c => {
+                    msg += c.restante <= 0 ? `• ${c.nome}: VENCIDO há ${Math.abs(c.restante)} KM!\n` : `• ${c.nome}: Faltam apenas ${c.restante} KM para o limite!\n`;
+                });
+                alert(msg);
+            }
+
+            renderizarStatusPecas(moto, manutencoes);
+            renderizarHistorico(manutencoes);
         }
 
         window.cadastrarMoto = async function(e) {
             e.preventDefault();
-            if (!currentUser) return;
-
             const novaMoto = {
                 modelo: document.getElementById('moto-modelo').value,
                 ano: parseInt(document.getElementById('moto-ano').value),
@@ -508,98 +609,115 @@
                 km_diaria_estimada: parseInt(document.getElementById('moto-media').value),
                 id_usuario: currentUser.uid
             };
-
             try {
                 await addDoc(collection(db, "motos"), novaMoto);
-                alert("Moto adicionada à sua garagem com sucesso!");
+                alert("Moto adicionada com sucesso!");
                 document.getElementById('form-moto').reset();
-            } catch (err) {
-                console.error(err);
-                alert("Erro ao salvar veículo: " + err.message);
-            }
+            } catch (err) { alert("Erro: " + err.message); }
         };
 
         window.cadastrarManutencao = async function(e) {
             e.preventDefault();
-            if (!activeMotoId || !currentUser) {
-                alert("Por favor, selecione ou cadastre uma moto antes.");
-                return;
-            }
-
+            if (!activeMotoId) return alert("Selecione uma moto ativa.");
             const kmRealizada = parseInt(document.getElementById('manut-km').value);
             const novaManut = {
+                id_moto: activeMotoId, id_usuario: currentUser.uid,
+                tipo_componente: document.getElementById('manut-tipo').value,
+                km_realizada: kmRealizada, data_servico: document.getElementById('manut-data').value
+            };
+            try {
+                await addDoc(collection(db, "manutencoes"), novaManut);
+                const motoAtiva = motosData.find(m => m.id === activeMotoId);
+                if (motoAtiva && kmRealizada > motoAtiva.odometro_atual) {
+                    await updateDoc(doc(db, "motos", activeMotoId), { odometro_atual: kmRealizada });
+                }
+                alert("Serviço registrado!");
+                document.getElementById('form-manutencao').reset();
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        // NOVA FUNÇÃO: CADASTRO DE ABASTECIMENTO
+        window.cadastrarAbastecimento = async function(e) {
+            e.preventDefault();
+            if (!activeMotoId) return alert("Selecione uma moto ativa.");
+
+            const kmAtual = parseInt(document.getElementById('fuel-km').value);
+            const litros = parseFloat(document.getElementById('fuel-litros').value);
+            const valor = parseFloat(document.getElementById('fuel-valor').value) || 0;
+            const dataHoje = new Date().toISOString().split('T')[0];
+
+            const novoAbastecimento = {
                 id_moto: activeMotoId,
                 id_usuario: currentUser.uid,
-                tipo_componente: document.getElementById('manut-tipo').value,
-                km_realizada: kmRealizada,
-                data_servico: document.getElementById('manut-data').value
+                km_actual: kmAtual, // Mantendo o padrão para o banco
+                km_atual: kmAtual,
+                litros: litros,
+                valor_pago: valor,
+                data: dataHoje
             };
 
             try {
-                await addDoc(collection(db, "manutencoes"), novaManut);
+                await addDoc(collection(db, "abastecimentos"), novoAbastecimento);
                 
+                // Se a KM digitada for maior que a do odômetro, atualiza o painel da moto
                 const motoAtiva = motosData.find(m => m.id === activeMotoId);
-                if (motoAtiva && kmRealizada > motoAtiva.odometro_atual) {
-                    const motoRef = doc(db, "motos", activeMotoId);
-                    await updateDoc(motoRef, { odometro_atual: kmRealizada });
+                if (motoAtiva && kmAtual > motoAtiva.odometro_atual) {
+                    await updateDoc(doc(db, "motos", activeMotoId), { odometro_atual: kmAtual });
                 }
 
-                alert("Serviço registrado com sucesso!");
-                document.getElementById('form-manutencao').reset();
+                alert("Abastecimento lançado e média atualizada!");
+                document.getElementById('form-abastecimento').reset();
             } catch (err) {
-                console.error(err);
-                alert("Erro ao lançar manutenção: " + err.message);
+                alert("Erro ao salvar abastecimento: " + err.message);
             }
         };
 
-        // FUNÇÃO PARA EXCLUIR A MOTO ATIVA
-        window.excluirMotoAtiva = async function() {
-            if (!activeMotoId || !currentUser) return;
-
+        window.editarTrocaComponente = async function(tipo) {
+            if (!activeMotoId) return;
             const motoAtiva = motosData.find(m => m.id === activeMotoId);
-            if (!motoAtiva) return;
+            const kmInput = prompt(`Informe a KM do painel ao trocar: ${traduzirTipo(tipo)}`, motoAtiva ? motoAtiva.odometro_atual : "");
+            if (!kmInput) return;
+            const kmRealizada = parseInt(kmInput);
+            const hoje = new Date().toISOString().split('T')[0];
 
-            const confirmar = confirm(`Tem certeza que deseja excluir a moto "${motoAtiva.modelo}" da sua garagem? Essa ação é irreversível.`);
-            
-            if (confirmar) {
-                try {
-                    const motoRef = doc(db, "motos", activeMotoId);
-                    await deleteDoc(motoRef);
-                    
-                    alert("Veículo removido da garagem com sucesso.");
-                    activeMotoId = null; 
-                } catch (err) {
-                    console.error("Erro ao excluir veículo: ", err);
-                    alert("Erro ao excluir veículo: " + err.message);
+            try {
+                await addDoc(collection(db, "manutencoes"), {
+                    id_moto: activeMotoId, id_usuario: currentUser.uid,
+                    tipo_componente: tipo, km_realizada: kmRealizada, data_servico: hoje
+                });
+                if (motoAtiva && kmRealizada > motoAtiva.odometro_atual) {
+                    await updateDoc(doc(db, "motos", activeMotoId), { odometro_atual: kmRealizada });
                 }
+                alert("Status atualizado!");
+            } catch (err) { alert("Erro: " + err.message); }
+        };
+
+        window.excluirMotoAtiva = async function() {
+            if (!activeMotoId) return;
+            const motoAtiva = motosData.find(m => m.id === activeMotoId);
+            if (confirm(`Excluir permanentemente a moto "${motoAtiva.modelo}"?`)) {
+                await deleteDoc(doc(db, "motos", activeMotoId));
+                activeMotoId = null;
             }
         };
 
         function renderizarStatusPecas(moto, manutencoes) {
             const container = document.getElementById('maint-cards-container');
             container.innerHTML = '';
-
             Object.keys(LIMITES).forEach(tipo => {
                 const limite = LIMITES[tipo];
                 const ultimas = manutencoes.filter(m => m.tipo_componente === tipo);
                 const ultimaKm = ultimas.length > 0 ? ultimas[0].km_realizada : 0;
-                
                 const kmRodados = Math.max(0, moto.odometro_atual - ultimaKm);
+                const kmRestantes = limite - kmRodados;
                 let pctUtilizada = Math.min(100, (kmRodados / limite) * 100);
-                let pctBarraRestante = 100 - pctUtilizada;
 
-                let statusTexto = "OK";
-                let statusClass = "status-ok";
-                let corBarra = "var(--success)";
-
-                if (pctUtilizada >= 100) {
-                    statusTexto = "CRÍTICO";
-                    statusClass = "status-critical";
-                    corBarra = "var(--primary)";
+                let statusTexto = "OK", statusClass = "status-ok", corBarra = "var(--success)";
+                if (kmRestantes <= 50) {
+                    statusTexto = kmRestantes <= 0 ? "VENCIDO" : `TROCAR (-${kmRestantes} KM)`;
+                    statusClass = "status-critical"; corBarra = "var(--primary)";
                 } else if (pctUtilizada >= 80) {
-                    statusTexto = "ALERTA";
-                    statusClass = "status-alert";
-                    corBarra = "#ffaa00";
+                    statusTexto = "ALERTA"; statusClass = "status-alert"; corBarra = "var(--warning)";
                 }
 
                 const card = document.createElement('div');
@@ -611,13 +729,16 @@
                             <span class="maint-status ${statusClass}">${statusTexto}</span>
                         </div>
                         <div class="progress-container">
-                            <div class="progress-bar" style="width: ${pctBarraRestante}%; background-color: ${corBarra}"></div>
+                            <div class="progress-bar" style="width: ${100 - pctUtilizada}%; background-color: ${corBarra}"></div>
                         </div>
                     </div>
                     <div class="maint-desc">
-                        Rodou <strong>${kmRodados} KM</strong> de um limite de ${limite} KM.<br>
-                        <span style="font-size:0.75rem; color: var(--text-muted)">Última troca em: ${ultimaKm} KM</span>
+                        Rodou <strong>${kmRodados} KM</strong> de ${limite} KM.<br>
+                        <span style="font-size:0.75rem;">Última troca: ${ultimaKm} KM</span>
                     </div>
+                    <button class="btn-maint-action" onclick="editarTrocaComponente('${tipo}')">
+                        <i class="fa-solid fa-pen-to-square"></i> Registrar Troca
+                    </button>
                 `;
                 container.appendChild(card);
             });
@@ -626,41 +747,26 @@
         function renderizarHistorico(manutencoes) {
             const tbody = document.getElementById('history-table-body');
             tbody.innerHTML = '';
-
             if (manutencoes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="color: var(--text-muted); text-align: center;">Nenhum serviço registrado nesta moto.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color:var(--text-muted)">Nenhum serviço.</td></tr>';
                 return;
             }
-
             manutencoes.forEach(m => {
                 const dataFormatada = new Date(m.data_servico + 'T00:00:00').toLocaleDateString('pt-BR');
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${dataFormatada}</strong></td>
-                    <td><span style="color: var(--primary); font-weight:600;">${traduzirTipo(m.tipo_componente)}</span></td>
-                    <td>${m.km_realizada} KM</td>
-                    <td><small style="color: var(--text-muted)">Registrado na base</small></td>
-                `;
+                tr.innerHTML = `<td><strong>${dataFormatada}</strong></td><td><span style="color: var(--primary); font-weight:600;">${traduzirTipo(m.tipo_componente)}</span></td><td>${m.km_realizada} KM</td><td><small style="color:var(--text-muted)">Registrado</small></td>`;
                 tbody.appendChild(tr);
             });
         }
 
         function traduzirTipo(tipo) {
-            const mapas = {
-                "Oleo Motor": "Óleo do Motor",
-                "Filtro Oleo": "Filtro de Óleo",
-                "Relação": "Kit Relação",
-                "Vela": "Vela de Ignição",
-                "Pneu Traseiro": "Pneu Traseiro",
-                "Pneu Dianteiro": "Pneu Dianteiro"
-            };
+            const mapas = { "Oleo Motor": "Óleo do Motor", "Filtro Oleo": "Filtro de Óleo", "Relação": "Kit Relação", "Vela": "Vela de Ignição", "Pneu Traseiro": "Pneu Traseiro", "Pneu Dianteiro": "Pneu Dianteiro" };
             return mapas[tipo] || tipo;
         }
 
         window.switchView = function(viewName, element) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            
             document.getElementById(`view-${viewName}`).classList.add('active');
             element.classList.add('active');
         };
