@@ -129,10 +129,16 @@
         
         /* PAINEL DE INFORMAÇÕES */
         .info-panel-box { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-        .info-mini-card { background: var(--bg-card); border: 1px solid var(--border); padding: 15px; border-radius: 10px; text-align: center; }
+        .info-mini-card { background: var(--bg-card); border: 1px solid var(--border); padding: 15px; border-radius: 10px; text-align: center; position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .info-mini-card span { display: block; font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 5px; }
         .info-mini-card strong { font-family: 'Orbitron', sans-serif; font-size: 1.4rem; color: var(--info); }
         .info-mini-card strong.fuel-calc { color: var(--success); }
+        
+        /* BOTÃO RESET ODÔMETRO PARCIAL */
+        .btn-reset-trip {
+            position: absolute; right: 12px; top: 12px; background: #242424; border: 1px solid var(--border); color: var(--text-muted); width: 28px; height: 28px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; transition: 0.2s;
+        }
+        .btn-reset-trip:hover { color: var(--warning); border-color: var(--warning); background: rgba(255, 170, 0, 0.05); }
 
         .form-group { margin-bottom: 15px; }
         label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -286,6 +292,9 @@
                 <div class="info-mini-card">
                     <span>Média Geral Consumo</span>
                     <strong id="info-media-combustivel" class="fuel-calc">-- KM/L</strong>
+                    <button class="btn-reset-trip" onclick="zerarTripMedia()" title="Zerar Odômetro de Média (Trip)">
+                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                    </button>
                 </div>
             </div>
 
@@ -533,7 +542,7 @@
 
             document.getElementById('info-km-atual').innerText = `${motoAtiva.odometro_atual} KM`;
 
-            // 1. Escuta Real-time de Manutenções
+            // 1. Escuta de Manutenções
             const qManut = query(
                 collection(db, "manutencoes"),
                 where("id_usuario", "==", currentUser.uid),
@@ -547,7 +556,7 @@
                 processarAlertasEManutencoes(motoAtiva, manutencoes);
             });
 
-            // 2. Escuta Real-time de Abastecimentos (Ordenada por KM para o cálculo correto)
+            // 2. Escuta de Abastecimentos
             const qFuel = query(
                 collection(db, "abastecimentos"),
                 where("id_usuario", "==", currentUser.uid),
@@ -559,15 +568,22 @@
                 const abastecimentos = [];
                 snapshotFuel.forEach((doc) => { abastecimentos.push({ id: doc.id, ...doc.data() }); });
                 
-                calcularMediaCombustivel(abastecimentos);
+                calcularMediaCombustivel(abastecimentos, motoAtiva.ultimo_reset_media);
                 renderizarResumoAbastecimentos(abastecimentos);
             });
         }
 
-        function calcularMediaCombustivel(abastecimentos) {
+        function calcularMediaCombustivel(abastecimentos, timestampReset) {
             const displayMedia = document.getElementById('info-media-combustivel');
             
-            if (abastecimentos.length < 2) {
+            // Filtra abastecimentos caso a média tenha sido "zerada" (ignora os anteriores ao reset)
+            let dadosFiltrados = abastecimentos;
+            if (timestampReset) {
+                const dataReset = new Date(timestampReset);
+                dadosFiltrados = abastecimentos.filter(f => new Date(f.data) >= dataReset);
+            }
+
+            if (dadosFiltrados.length < 2) {
                 displayMedia.innerText = "-- KM/L";
                 return;
             }
@@ -575,11 +591,11 @@
             let quilometragemTotal = 0;
             let litrosConsumidos = 0;
 
-            for (let i = 1; i < abastecimentos.length; i++) {
-                const kmDiferenca = abastecimentos[i].km_atual - abastecimentos[i-1].km_atual;
+            for (let i = 1; i < dadosFiltrados.length; i++) {
+                const kmDiferenca = dadosFiltrados[i].km_atual - dadosFiltrados[i-1].km_atual;
                 if (kmDiferenca > 0) {
                     quilometragemTotal += kmDiferenca;
-                    litrosConsumidos += abastecimentos[i].litros;
+                    litrosConsumidos += dadosFiltrados[i].litros;
                 }
             }
 
@@ -591,7 +607,22 @@
             }
         }
 
-        // RENDERIZA A TABELA DE RESUMO DE COMBUSTÍVEL
+        // FUNÇÃO PARA MARCAR O RESET DO ODÔMETRO PARCIAL (TRIP)
+        window.zerarTripMedia = async function() {
+            if (!activeMotoId) return;
+            if (confirm("Deseja zerar o odômetro de média? Os próximos abastecimentos criarão um novo cálculo do zero.")) {
+                try {
+                    const agoraISO = new Date().toISOString();
+                    await updateDoc(doc(db, "motos", activeMotoId), {
+                        ultimo_reset_media: agoraISO
+                    });
+                    alert("Odômetro de média zerado com sucesso!");
+                } catch (err) {
+                    alert("Erro ao zerar odômetro: " + err.message);
+                }
+            }
+        };
+
         function renderizarResumoAbastecimentos(abastecimentos) {
             const tbody = document.getElementById('fuel-table-body');
             tbody.innerHTML = '';
@@ -601,13 +632,11 @@
                 return;
             }
 
-            // Exibir os mais recentes no topo da tabela do resumo
             const listaInvertida = [...abastecimentos].reverse();
 
             listaInvertida.forEach(f => {
                 let dataExibicao = "---";
                 if(f.data) {
-                    // Trata se for apenas String "AAAA-MM-DD" ou Data completa com ISO string
                     const d = new Date(f.data);
                     dataExibicao = !isNaN(d.getTime()) ? d.toLocaleString('pt-BR', {timeZone: 'America/Sao_Paulo'}).substring(0, 16) : f.data;
                 }
@@ -635,8 +664,6 @@
             const kmAtual = parseInt(document.getElementById('fuel-km').value);
             const litros = parseFloat(document.getElementById('fuel-litros').value);
             const valor = parseFloat(document.getElementById('fuel-valor').value) || 0;
-            
-            // Salva a data e hora atual completa no padrão ISO string
             const dataHoraAtual = new Date().toISOString(); 
 
             const novoAbastecimento = {
@@ -663,7 +690,6 @@
             }
         };
 
-        // EXCLUSÃO INDIVIDUAL DE ABASTECIMENTOS
         window.excluirAbastecimento = async function(id) {
             if (confirm("Tem certeza que deseja excluir este registro de abastecimento? (A média geral será recalculada)")) {
                 try {
@@ -708,7 +734,8 @@
                 ano: parseInt(document.getElementById('moto-ano').value),
                 odometro_atual: parseInt(document.getElementById('moto-km').value),
                 km_diaria_estimada: parseInt(document.getElementById('moto-media').value),
-                id_usuario: currentUser.uid
+                id_usuario: currentUser.uid,
+                ultimo_reset_media: ""
             };
             try {
                 await addDoc(collection(db, "motos"), novaMoto);
