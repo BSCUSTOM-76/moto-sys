@@ -97,7 +97,7 @@
         .btn-logout { background: transparent; border: 1px solid #ff3333; color: #ff3333; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; transition: 0.2s; }
         .btn-logout:hover { background: #ff3333; color: white; }
 
-        /* RODAPÉ DO BRUNO FIXO NO FIM */
+        /* RODAPÉ FIXO NO FIM */
         .sidebar-footer { 
             padding: 20px 15px; 
             text-align: center; 
@@ -280,8 +280,7 @@
 
         <section id="view-status" class="view-section">
             <h2>Status de Peças & Consumíveis</h2>
-            <div class="maintenance-grid" id="maint-cards-container">
-                </div>
+            <div class="maintenance-grid" id="maint-cards-container"></div>
         </section>
 
         <section id="view-historico" class="view-section">
@@ -296,8 +295,7 @@
                             <th>Idade do Serviço</th>
                         </tr>
                     </thead>
-                    <tbody id="history-table-body">
-                        </tbody>
+                    <tbody id="history-table-body"></tbody>
                 </table>
             </div>
         </section>
@@ -305,10 +303,10 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // CONFIGURAÇÃO DO SEU FIREBASE (LEMBRE-SE DE COLOCAR SUAS CHAVES REAIS AQUI!)
+        // CONFIGURAÇÃO DO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBr_NKOSzmh2CwbR7SYaLAk_0TsYe39VTY",
             authDomain: "moto-sys.firebaseapp.com",
@@ -323,13 +321,11 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // ESTADO GLOBAL DA APLICAÇÃO
         let currentUser = null;
         let isLoginMode = true;
         let activeMotoId = null;
         let motosData = [];
 
-        // LIMITES TÉCNICOS DE MANUTENÇÃO (KM)
         const LIMITES = {
             "Oleo Motor": 3000,
             "Filtro Oleo": 6000,
@@ -339,7 +335,6 @@
             "Pneu Dianteiro": 18000
         };
 
-        // --- CONTROLE DE AUTENTICAÇÃO ---
         window.switchAuthMode = function(mode) {
             isLoginMode = mode;
             document.getElementById('tab-login').className = mode ? 'active' : '';
@@ -369,7 +364,6 @@
             signOut(auth);
         };
 
-        // ESCUTADOR DE ESTADO DE LOGIN
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
@@ -392,7 +386,6 @@
             motosData = [];
         }
 
-        // --- INICIALIZAÇÃO DOS DADOS OTIMIZADOS ---
         function initApp() {
             const qMotos = query(
                 collection(db, "motos"), 
@@ -463,7 +456,6 @@
             });
         }
 
-        // --- OPERAÇÕES DE BANCO DE DADOS ---
         window.cadastrarMoto = async function(e) {
             e.preventDefault();
             if (!currentUser) return;
@@ -493,17 +485,26 @@
                 return;
             }
 
+            const kmRealizada = parseInt(document.getElementById('manut-km').value);
             const novaManut = {
                 id_moto: activeMotoId,
                 id_usuario: currentUser.uid,
                 tipo_componente: document.getElementById('manut-tipo').value,
-                km_realizada: parseInt(document.getElementById('manut-km').value),
+                km_realizada: kmRealizada,
                 data_servico: document.getElementById('manut-data').value
             };
 
             try {
                 await addDoc(collection(db, "manutencoes"), novaManut);
-                alert("Serviço registrado com sucesso no banco!");
+                
+                // Atualiza o odômetro da moto de forma inteligente se o serviço foi feito em KM superior
+                const motoAtiva = motosData.find(m => m.id === activeMotoId);
+                if (motoAtiva && kmRealizada > motoAtiva.odometro_atual) {
+                    const motoRef = doc(db, "motos", activeMotoId);
+                    await updateDoc(motoRef, { odometro_atual: kmRealizada });
+                }
+
+                alert("Serviço registrado com sucesso!");
                 document.getElementById('form-manutencao').reset();
             } catch (err) {
                 console.error(err);
@@ -511,7 +512,6 @@
             }
         };
 
-        // --- RENDERIZADORES DE TELA ---
         function renderizarStatusPecas(moto, manutencoes) {
             const container = document.getElementById('maint-cards-container');
             container.innerHTML = '';
@@ -522,18 +522,20 @@
                 const ultimaKm = ultimas.length > 0 ? ultimas[0].km_realizada : 0;
                 
                 const kmRodados = Math.max(0, moto.odometro_atual - ultimaKm);
-                let pct = Math.min(100, (kmRodados / limite) * 100);
-                let pctBarra = 100 - pct;
+                let pctUtilizada = Math.min(100, (kmRodados / limite) * 100);
+                
+                // Inversão corrigida: a barra exibe a vida útil RESTANTE
+                let pctBarraRestante = 100 - pctUtilizada;
 
                 let statusTexto = "OK";
                 let statusClass = "status-ok";
                 let corBarra = "var(--success)";
 
-                if (pct >= 100) {
+                if (pctUtilizada >= 100) {
                     statusTexto = "CRÍTICO";
                     statusClass = "status-critical";
                     corBarra = "var(--primary)";
-                } else if (pct >= 80) {
+                } else if (pctUtilizada >= 80) {
                     statusTexto = "ALERTA";
                     statusClass = "status-alert";
                     corBarra = "#ffaa00";
@@ -548,7 +550,7 @@
                             <span class="maint-status ${statusClass}">${statusTexto}</span>
                         </div>
                         <div class="progress-container">
-                            <div class="progress-bar" style="width: ${pctBarra}%; background-color: ${corBarra}"></div>
+                            <div class="progress-bar" style="width: ${pctBarraRestante}%; background-color: ${corBarra}"></div>
                         </div>
                     </div>
                     <div class="maint-desc">
@@ -588,7 +590,8 @@
                 "Filtro Oleo": "Filtro de Óleo",
                 "Relação": "Kit Relação",
                 "Vela": "Vela de Ignição",
-                "Pneu Traseiro": "Pneu Traseiro"
+                "Pneu Traseiro": "Pneu Traseiro",
+                "Pneu Dianteiro": "Pneu Dianteiro"
             };
             return mapas[tipo] || tipo;
         }
