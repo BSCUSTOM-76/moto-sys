@@ -576,18 +576,31 @@
         function calcularMediaCombustivel(abastecimentos, timestampReset) {
             const displayMedia = document.getElementById('info-media-combustivel');
             
-            // Filtra abastecimentos caso a média tenha sido "zerada"
-            let dadosFiltrados = abastecimentos;
-            if (timestampReset) {
-                const timeReset = new Date(timestampReset).getTime();
-                // Ignora qualquer abastecimento feito ANTES do momento do reset
-                dadosFiltrados = abastecimentos.filter(f => {
-                    if (!f.data) return true;
-                    return new Date(f.data).getTime() >= timeReset;
-                });
+            // Se não houver abastecimentos, já zera direto
+            if (!abastecimentos || abastecimentos.length === 0) {
+                displayMedia.innerText = "-- KM/L";
+                return;
             }
 
-            // Precisamos de pelo menos 2 abastecimentos APÓS o reset para calcular uma média de variação de KM
+            // Filtra abastecimentos caso a média tenha sido "zerada"
+            let dadosFiltrados = abastecimentos;
+            
+            // CORREÇÃO: Garante que o timestampReset existe e é válido antes de filtrar
+            if (timestampReset && timestampReset !== "") {
+                try {
+                    const timeReset = new Date(timestampReset).getTime();
+                    if (!isNaN(timeReset)) {
+                        dadosFiltrados = abastecimentos.filter(f => {
+                            if (!f.data) return false;
+                            return new Date(f.data).getTime() >= timeReset;
+                        });
+                    }
+                } catch (e) {
+                    console.error("Erro ao processar data de reset:", e);
+                }
+            }
+
+            // Precisamos de pelo menos 2 abastecimentos APÓS o reset para calcular a média
             if (dadosFiltrados.length < 2) {
                 displayMedia.innerText = "-- KM/L";
                 return;
@@ -596,12 +609,11 @@
             let quilometragemTotal = 0;
             let litrosConsumidos = 0;
 
-            // Percorre os dados filtrados calculando a diferença entre os tanques
             for (let i = 1; i < dadosFiltrados.length; i++) {
                 const kmDiferenca = dadosFiltrados[i].km_atual - dadosFiltrados[i-1].km_atual;
                 if (kmDiferenca > 0) {
                     quilometragemTotal += kmDiferenca;
-                    litrosConsumidos += dadosFiltrados[i].litros; // Soma o combustível que encheu o tanque para rodar essa diferença
+                    litrosConsumidos += dadosFiltrados[i].litros;
                 }
             }
 
@@ -612,6 +624,47 @@
                 displayMedia.innerText = "-- KM/L";
             }
         }
+
+        // CORREÇÃO: Função de cadastro robusta com tratamento de erros visível
+        window.cadastrarAbastecimento = async function(e) {
+            e.preventDefault();
+            if (!activeMotoId) return alert("Selecione uma moto ativa.");
+
+            const kmAtual = parseInt(document.getElementById('fuel-km').value);
+            const litros = parseFloat(document.getElementById('fuel-litros').value);
+            const valor = parseFloat(document.getElementById('fuel-valor').value) || 0;
+            
+            // Grava no fuso horário local para evitar divergências na ordenação da tabela
+            const agora = new Date();
+            const offset = agora.getTimezoneOffset() * 60000;
+            const dataHoraLocal = new Date(agora.getTime() - offset).toISOString();
+
+            const novoAbastecimento = {
+                id_moto: activeMotoId,
+                id_usuario: currentUser.uid,
+                km_atual: kmAtual,
+                litros: litros,
+                valor_pago: valor,
+                data: dataHoraLocal
+            };
+
+            try {
+                // Força o salvamento no banco de dados
+                await addDoc(collection(db, "abastecimentos"), novoAbastecimento);
+                
+                // Atualiza o odômetro da moto se a KM atual for maior
+                const motoAtiva = motosData.find(m => m.id === activeMotoId);
+                if (motoAtiva && kmAtual > motoAtiva.odometro_atual) {
+                    await updateDoc(doc(db, "motos", activeMotoId), { odometro_atual: kmAtual });
+                }
+
+                alert("Abastecimento lançado com sucesso!");
+                document.getElementById('form-abastecimento').reset();
+            } catch (err) {
+                console.error("Erro completo do Firebase:", err);
+                alert("Erro ao salvar no banco de dados: " + err.message);
+            }
+        };
 
         // FUNÇÃO PARA MARCAR O RESET DO ODÔMETRO PARCIAL (TRIP)
         window.zerarTripMedia = async function() {
