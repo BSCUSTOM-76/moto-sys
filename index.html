@@ -137,8 +137,7 @@
         .selector-box { background: var(--bg-card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 30px; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
         .selector-box div { flex-grow: 1; max-width: 400px; }
         .btn-delete-moto { background: #242424; border: 1px solid var(--danger); color: var(--danger); padding: 12px 16px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem; transition: 0.2s; display: flex; align-items: center; gap: 8px; height: 48px; }
-        .btn-delete-moto:hover:not(:disabled) { background: var(--danger); color: white; }
-        .btn-delete-moto:disabled { opacity: 0.3; cursor: not-allowed; border-color: #444; color: #666; }
+        .btn-delete-moto:hover { background: var(--danger); color: white; }
 
         /* CARDS DE MANUTENÇÃO */
         .maintenance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
@@ -231,7 +230,7 @@
                     <option value="">Nenhuma moto cadastrada</option>
                 </select>
             </div>
-            <button class="btn-delete-moto" id="btn-deletar-moto" onclick="excluirMotoAtiva()" disabled>
+            <button class="btn-delete-moto" id="btn-deletar-moto" onclick="excluirMotoAtiva()">
                 <i class="fa-solid fa-trash"></i> Excluir Moto
             </button>
         </div>
@@ -394,7 +393,7 @@
             document.getElementById('global-moto-selector').innerHTML = '<option value="">Nenhuma moto cadastrada</option>';
             document.getElementById('maint-cards-container').innerHTML = '';
             document.getElementById('history-table-body').innerHTML = '';
-            document.getElementById('btn-deletar-moto').disabled = true;
+            document.getElementById('btn-deletar-moto').style.display = 'none';
             activeMotoId = null;
             motosData = [];
         }
@@ -407,18 +406,17 @@
 
             onSnapshot(qMotos, (snapshot) => {
                 const selector = document.getElementById('global-moto-selector');
-                const btnDeletar = document.getElementById('btn-deletar-moto');
                 selector.innerHTML = '';
                 motosData = [];
 
                 if (snapshot.empty) {
                     selector.innerHTML = '<option value="">Nenhuma moto cadastrada</option>';
-                    btnDeletar.disabled = true;
+                    document.getElementById('btn-deletar-moto').style.display = 'none';
                     limparPaineis();
                     return;
                 }
 
-                btnDeletar.disabled = false;
+                document.getElementById('btn-deletar-moto').style.display = 'flex';
 
                 snapshot.forEach((doc) => {
                     const moto = { id: doc.id, ...doc.data() };
