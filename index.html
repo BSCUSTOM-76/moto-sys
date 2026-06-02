@@ -123,7 +123,7 @@
 
         h2 { font-size: 1.8rem; margin-bottom: 30px; }
         
-        /* GRID LAYOUT DA GARAGEM ADAPTADO PARA 3 COLUNAS */
+        /* GRID LAYOUT DA GARAGEM */
         .grid-forms { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; align-items: start; }
         
         .card { background: var(--bg-card); border: 1px solid var(--border); padding: 25px; border-radius: 12px; margin-bottom: 25px; }
@@ -342,7 +342,7 @@
                     </form>
                 </div>
 
-                <!-- FORMULÁRIO 3: NOVO ABASTECIMENTO (ADICIONADO) -->
+                <!-- FORMULÁRIO 3: NOVO ABASTECIMENTO -->
                 <div class="card">
                     <div class="card-title"><i class="fa-solid fa-gas-pump"></i> Registrar Abastecimento</div>
                     <form id="form-abastecimento" onsubmit="cadastrarAbastecimento(event)">
@@ -515,7 +515,7 @@
 
             document.getElementById('info-km-atual').innerText = `${motoAtiva.odometro_atual} KM`;
 
-            // Escuta Manutenções
+            // 1. Escuta Real-time de Manutenções (Processa as peças independente de haver combustível ou não)
             const qManut = query(
                 collection(db, "manutencoes"),
                 where("id_usuario", "==", currentUser.uid),
@@ -526,26 +526,24 @@
             onSnapshot(qManut, (snapshotManut) => {
                 const manutencoes = [];
                 snapshotManut.forEach((doc) => { manutencoes.push({ id: doc.id, ...doc.data() }); });
-                
-                // Escuta Abastecimentos para processar a média junto
-                const qFuel = query(
-                    collection(db, "abastecimentos"),
-                    where("id_usuario", "==", currentUser.uid),
-                    where("id_moto", "==", activeMotoId),
-                    orderBy("km_atual", "asc")
-                );
+                processarAlertasEManutencoes(motoAtiva, manutencoes);
+            });
 
-                onSnapshot(qFuel, (snapshotFuel) => {
-                    const abastecimentos = [];
-                    snapshotFuel.forEach((doc) => { abastecimentos.push({ id: doc.id, ...doc.data() }); });
-                    
-                    calcularMediaCombustivel(abastecimentos);
-                    processarAlertasEManutencoes(motoAtiva, manutencoes);
-                });
+            // 2. Escuta Real-time de Abastecimentos (Paralela e isolada)
+            const qFuel = query(
+                collection(db, "abastecimentos"),
+                where("id_usuario", "==", currentUser.uid),
+                where("id_moto", "==", activeMotoId),
+                orderBy("km_atual", "asc")
+            );
+
+            onSnapshot(qFuel, (snapshotFuel) => {
+                const abastecimentos = [];
+                snapshotFuel.forEach((doc) => { abastecimentos.push({ id: doc.id, ...doc.data() }); });
+                calcularMediaCombustivel(abastecimentos);
             });
         }
 
-        // FUNÇÃO DE CÁLCULO DE CONSUMO DE COMBUSTÍVEL
         function calcularMediaCombustivel(abastecimentos) {
             const displayMedia = document.getElementById('info-media-combustivel');
             
@@ -557,7 +555,6 @@
             let quilometragemTotal = 0;
             let litrosConsumidos = 0;
 
-            // Calcula a diferença de KM entre os abastecimentos e soma os litros
             for (let i = 1; i < abastecimentos.length; i++) {
                 const kmDiferenca = abastecimentos[i].km_atual - abastecimentos[i-1].km_atual;
                 if (kmDiferenca > 0) {
@@ -636,7 +633,6 @@
             } catch (err) { alert("Erro: " + err.message); }
         };
 
-        // NOVA FUNÇÃO: CADASTRO DE ABASTECIMENTO
         window.cadastrarAbastecimento = async function(e) {
             e.preventDefault();
             if (!activeMotoId) return alert("Selecione uma moto ativa.");
@@ -649,7 +645,7 @@
             const novoAbastecimento = {
                 id_moto: activeMotoId,
                 id_usuario: currentUser.uid,
-                km_actual: kmAtual, // Mantendo o padrão para o banco
+                km_actual: kmAtual,
                 km_atual: kmAtual,
                 litros: litros,
                 valor_pago: valor,
@@ -659,7 +655,6 @@
             try {
                 await addDoc(collection(db, "abastecimentos"), novoAbastecimento);
                 
-                // Se a KM digitada for maior que a do odômetro, atualiza o painel da moto
                 const motoAtiva = motosData.find(m => m.id === activeMotoId);
                 if (motoAtiva && kmAtual > motoAtiva.odometro_atual) {
                     await updateDoc(doc(db, "motos", activeMotoId), { odometro_atual: kmAtual });
@@ -688,7 +683,7 @@
                 if (motoAtiva && kmRealizada > motoAtiva.odometro_atual) {
                     await updateDoc(doc(db, "motos", activeMotoId), { odometro_atual: kmRealizada });
                 }
-                alert("Status atualizado!");
+                alert("Status updated!");
             } catch (err) { alert("Erro: " + err.message); }
         };
 
