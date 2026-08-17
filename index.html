@@ -115,7 +115,7 @@
         .view-section { display: none; }
         .view-section.active { display: block; }
 
-        h2 { font-size: 1.8rem; margin-bottom: 30px; }
+        h2 { font-size: 1.8rem; margin-bottom: 30px; color: #ffffff; }
         .grid-forms { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; }
         
         .card { background: var(--bg-card); border: 1px solid var(--border); padding: 30px; border-radius: 12px; margin-bottom: 30px; }
@@ -136,7 +136,7 @@
         .maintenance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
         .maint-card { background: var(--bg-card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between; }
         .maint-info { display: flex; justify-content: space-between; margin-bottom: 15px; }
-        .maint-name { font-weight: 700; font-size: 1.1rem; }
+        .maint-name { font-weight: 700; font-size: 1.1rem; color: #ffffff; }
         .maint-status { font-size: 0.85rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; }
         .status-ok { background: rgba(0, 230, 118, 0.15); color: var(--success); }
         .status-alert { background: rgba(255, 170, 0, 0.15); color: #ffaa00; }
@@ -242,7 +242,7 @@
                             <input type="number" id="moto-km" placeholder="Ex: 21000" required>
                         </div>
                         <div class="form-group">
-                            <label>Média de KM Diária (Padrão: 15 km/dia)</label>
+                            <label>Média de KM Diária (Padrão: 30 km/dia)</label>
                             <input type="number" id="moto-media" placeholder="Ex: 30" value="30" required>
                         </div>
                         <button type="submit" class="btn-primary">Salvar na Garagem</button>
@@ -305,7 +305,6 @@
         import { getFirestore, collection, addDoc, doc, updateDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // CONFIGURAÇÃO DO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBr_NKOSzmh2CwbR7SYaLAk_0TsYe39VTY",
             authDomain: "moto-sys.firebaseapp.com",
@@ -510,14 +509,14 @@
             }
         };
 
-       function renderizarStatusPecas(moto, manutencoes) {
+        function renderizarStatusPecas(moto, manutencoes) {
             const container = document.getElementById('maint-cards-container');
             container.innerHTML = '';
 
-            const kmDiario = moto.km_diaria_estimada && moto.km_diaria_estimada > 0 ? Number(moto.km_diaria_estimada) : 30;
+            const kmDiario = moto.km_diaria_estimada && Number(moto.km_diaria_estimada) > 0 ? Number(moto.km_diaria_estimada) : 30;
             const odometroAtual = Number(moto.odometro_atual) || 0;
 
-            // Data de Hoje (zerando horas para comparar apenas os dias)
+            // Data de Hoje
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
 
@@ -531,37 +530,34 @@
                 if (ultimas.length > 0) {
                     ultimaKm = Number(ultimas[0].km_realizada) || 0;
                     if (ultimas[0].data_servico) {
-                        // Trata a string da data para garantir que o JavaScript entenda no fuso local (AAAA-MM-DD)
-                        const partesData = ultimas[0].data_servico.split('-');
-                        if (partesData.length === 3) {
-                            dataManutencao = new Date(partesData[0], partesData[1] - 1, partesData[2]);
+                        // Faz o parse exato de AAAA-MM-DD ignorando diferenças de fuso horário
+                        const p = ultimas[0].data_servico.split('-');
+                        if (p.length === 3) {
+                            dataManutencao = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
                             dataManutencao.setHours(0, 0, 0, 0);
                         }
                     }
                 }
 
-                // 1. Diferença de KM direta pelo Odômetro Manual
+                // 1. Diferença medida diretamente pelo odômetro
                 let kmRodadosManual = Math.max(0, odometroAtual - ultimaKm);
                 let kmEstimadosPorData = 0;
 
-                // 2. Cálculo dos dias decorridos desde a data cadastrada na manutenção
+                // 2. Cálculo dos dias decorridos a partir da data de manutenção cadastrada
                 if (dataManutencao) {
-                    const diffEmMilissegundos = hoje.getTime() - dataManutencao.getTime();
-                    // Converte milissegundos para dias inteiros passados
-                    const diasDecorridos = Math.max(0, Math.floor(diffEmMilissegundos / (1000 * 60 * 60 * 24)));
-                    
-                    // Multiplica os dias passados pela média diária
+                    const diffMs = hoje.getTime() - dataManutencao.getTime();
+                    const diasDecorridos = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
                     kmEstimadosPorData = diasDecorridos * kmDiario;
                 }
 
-                // Pega o maior valor entre o que foi atualizado no odômetro ou o decorrido por data
+                // O sistema assume o maior valor (seja atualização de odômetro ou tempo decorrido)
                 const kmRodados = Math.max(kmRodadosManual, kmEstimadosPorData);
 
                 let pctUtilizada = Math.min(100, (kmRodados / limite) * 100);
                 let pctBarraRestante = Math.max(0, 100 - pctUtilizada);
                 const kmRestantes = Math.max(0, limite - kmRodados);
 
-                // Previsão de próxima troca
+                // Cálculo da Previsão de Próxima Troca
                 let dataPrevista = new Date();
                 let diasRestantes = 0;
 
@@ -570,8 +566,8 @@
                     dataPrevista = new Date(dataManutencao);
                     dataPrevista.setDate(dataPrevista.getDate() + totalDiasDuracao);
 
-                    const diffRestante = dataPrevista.getTime() - hoje.getTime();
-                    diasRestantes = Math.ceil(diffRestante / (1000 * 60 * 60 * 24));
+                    const diffRestanteMs = dataPrevista.getTime() - hoje.getTime();
+                    diasRestantes = Math.ceil(diffRestanteMs / (1000 * 60 * 60 * 24));
                 } else {
                     diasRestantes = Math.ceil(kmRestantes / kmDiario);
                     dataPrevista.setDate(hoje.getDate() + diasRestantes);
@@ -633,7 +629,13 @@
             }
 
             manutencoes.forEach(m => {
-                const dataFormatada = new Date(m.data_servico + 'T00:00:00').toLocaleDateString('pt-BR');
+                let dataFormatada = 'Não informada';
+                if (m.data_servico) {
+                    const p = m.data_servico.split('-');
+                    if (p.length === 3) {
+                        dataFormatada = `${p[2]}/${p[1]}/${p[0]}`;
+                    }
+                }
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><strong>${dataFormatada}</strong></td>
