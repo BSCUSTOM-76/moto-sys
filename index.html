@@ -436,11 +436,12 @@
             const motoAtiva = motosData.find(m => m.id === activeMotoId);
             if (!motoAtiva) return;
 
+            // Removido o orderBy no Firestore para evitar que a query trave por falta de índice.
+            // A ordenação é feita via JavaScript logo em seguida.
             const qManut = query(
                 collection(db, "manutencoes"),
                 where("id_usuario", "==", currentUser.uid),
-                where("id_moto", "==", activeMotoId),
-                orderBy("km_realizada", "desc")
+                where("id_moto", "==", activeMotoId)
             );
 
             onSnapshot(qManut, (snapshot) => {
@@ -449,32 +450,15 @@
                     manutencoes.push({ id: doc.id, ...doc.data() });
                 });
 
+                // Ordena da maior KM realizada para a menor no próprio navegador
+                manutencoes.sort((a, b) => (Number(b.km_realizada) || 0) - (Number(a.km_realizada) || 0));
+
                 renderizarStatusPecas(motoAtiva, manutencoes);
                 renderizarHistorico(manutencoes);
+            }, (error) => {
+                console.error("Erro ao buscar manutenções:", error);
             });
         }
-
-        window.cadastrarMoto = async function(e) {
-            e.preventDefault();
-            if (!currentUser) return;
-
-            const novaMoto = {
-                modelo: document.getElementById('moto-modelo').value,
-                ano: parseInt(document.getElementById('moto-ano').value),
-                odometro_atual: parseInt(document.getElementById('moto-km').value),
-                km_diaria_estimada: parseInt(document.getElementById('moto-media').value) || 30,
-                id_usuario: currentUser.uid
-            };
-
-            try {
-                await addDoc(collection(db, "motos"), novaMoto);
-                alert("Moto adicionada à sua garagem com sucesso!");
-                document.getElementById('form-moto').reset();
-            } catch (err) {
-                console.error(err);
-                alert("Erro ao salvar veículo: " + err.message);
-            }
-        };
 
         window.cadastrarManutencao = async function(e) {
             e.preventDefault();
@@ -493,10 +477,12 @@
             };
 
             try {
+                // 1. Salva o registro da manutenção
                 await addDoc(collection(db, "manutencoes"), novaManut);
                 
+                // 2. Atualiza o odômetro da moto na garagem se a KM da manutenção for maior ou igual ao odômetro atual
                 const motoAtiva = motosData.find(m => m.id === activeMotoId);
-                if (motoAtiva && kmRealizada > motoAtiva.odometro_atual) {
+                if (motoAtiva && kmRealizada >= motoAtiva.odometro_atual) {
                     const motoRef = doc(db, "motos", activeMotoId);
                     await updateDoc(motoRef, { odometro_atual: kmRealizada });
                 }
@@ -504,7 +490,7 @@
                 alert("Serviço registrado com sucesso!");
                 document.getElementById('form-manutencao').reset();
             } catch (err) {
-                console.error(err);
+                console.error("Erro detalhado ao lançar manutenção:", err);
                 alert("Erro ao lançar manutenção: " + err.message);
             }
         };
