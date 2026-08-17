@@ -3,310 +3,383 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BS.CUSTOM — Oficina & Garagem</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1a1a1a">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <title>BS Custom - Gestão Técnica</title>
     <style>
         :root {
-            --bg-main: #121212;
-            --bg-card: #1a1a1a;
-            --bg-input: #242424;
-            --primary: #ff5500;
-            --primary-hover: #ff7733;
-            --text-main: #ffffff;
-            --text-muted: #a0a0a0;
-            --border: #2d2d2d;
-            --success: #00e676;
+            --bg-dark: #121214;
+            --card-bg: #202024;
+            --card-border: #29292e;
+            --primary: #32CD32;          /* Verde Limão principal */
+            --primary-hover: #28a745;    /* Verde Limão mais escuro */
+            --text-main: #e1e1e6;
+            --text-muted: #a8a8b3;
+            --success: #00b37e;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg-main); color: var(--text-main); display: flex; min-height: 100vh; overflow-x: hidden; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-        /* MODAL DE AUTENTICAÇÃO */
-        #auth-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(10, 10, 10, 0.95); z-index: 9999;
-            display: flex; justify-content: center; align-items: center; padding: 20px;
-        }
-        .auth-card {
-            background: var(--bg-card); border: 1px solid var(--border);
-            width: 100%; max-width: 420px; padding: 40px 30px; border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); text-align: center;
-        }
-        .auth-brand { font-family: 'Orbitron', sans-serif; color: var(--primary); font-size: 2rem; margin-bottom: 5px; }
-        .auth-subtitle { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px; }
-        .auth-toggle { display: flex; background: var(--bg-main); border-radius: 8px; padding: 4px; margin-bottom: 25px; border: 1px solid var(--border); }
-        .auth-toggle button { flex: 1; padding: 10px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-radius: 6px; font-weight: 600; transition: 0.2s; }
-        .auth-toggle button.active { background: var(--primary); color: white; }
-        
-        /* INTERFACE PRINCIPAL - BARRA LATERAL COM FLEXBOX */
-        sidebar { 
-            width: 260px; 
-            background: var(--bg-card); 
-            border-right: 1px solid var(--border); 
-            display: flex; 
-            flex-direction: column; 
-            justify-content: space-between;
-            position: relative;
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
             min-height: 100vh;
         }
-        
-        .sidebar-top { padding: 30px 20px 20px 20px; }
-        
-        /* CABEÇALHO DA LOGO */
-        .sidebar-header { 
-            text-align: center; 
-            padding-bottom: 25px; 
-            border-bottom: 1px solid var(--border); 
-            margin-bottom: 30px; 
+
+        /* OVERLAY DE AUTENTICAÇÃO */
+        #auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(18, 18, 20, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
         }
-        .sidebar-logo { 
-            max-width: 90px; 
-            height: auto; 
-            margin-bottom: 15px; 
-            display: block; 
-            margin-left: auto; 
-            margin-right: auto; 
+
+        .auth-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 2.5rem;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
-        .sidebar-brand { 
-            color: var(--primary); 
-            font-family: 'Impact', 'Arial Black', sans-serif; 
-            font-size: 1.7rem; 
-            letter-spacing: 2px; 
-            margin: 0; 
-            text-transform: uppercase; 
+
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--card-border);
         }
-        .sidebar-subtitle { 
-            color: #666; 
-            font-size: 0.75rem; 
-            letter-spacing: 1px; 
-            display: block; 
-            margin-top: 4px; 
+
+        .auth-tab {
+            flex: 1;
+            padding: 0.75rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-weight: 600;
         }
-        
-        .nav-menu { display: flex; flex-direction: column; gap: 10px; }
-        .nav-item { display: flex; align-items: center; gap: 15px; padding: 14px 18px; color: var(--text-muted); text-decoration: none; border-radius: 8px; font-weight: 600; transition: 0.2s; cursor: pointer; }
-        .nav-item:hover, .nav-item.active { background: var(--bg-input); color: var(--text-main); }
-        .nav-item.active { border-left: 4px solid var(--primary); color: var(--primary); }
-        
-        .user-panel { border-top: 1px solid var(--border); padding-top: 20px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-        .user-email { font-size: 0.85rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .btn-logout { background: transparent; border: 1px solid #ff3333; color: #ff3333; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; transition: 0.2s; }
-        .btn-logout:hover { background: #ff3333; color: white; }
 
-        /* RODAPÉ FIXO NO FIM */
-        .sidebar-footer { 
-            padding: 20px 15px; 
-            text-align: center; 
-            border-top: 1px solid var(--border); 
-            background-color: #111111; 
+        .auth-tab.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
         }
-        .footer-text { 
-            color: #555555; 
-            font-size: 0.75rem; 
-            font-family: 'Arial', sans-serif; 
-            margin: 0; 
-            letter-spacing: 0.5px; 
+
+        /* LAYOUT PRINCIPAL */
+        .sidebar {
+            width: 260px;
+            background-color: var(--card-bg);
+            border-right: 1px solid var(--card-border);
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
         }
-        .footer-author { color: #888888; font-weight: bold; }
 
-        main { flex-grow: 1; padding: 40px; max-width: 1200px; margin: 0 auto; width: 100%; }
-        .view-section { display: none; }
-        .view-section.active { display: block; }
+        .brand {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-        h2 { font-size: 1.8rem; margin-bottom: 30px; }
-        .grid-forms { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start; }
-        
-        .card { background: var(--bg-card); border: 1px solid var(--border); padding: 30px; border-radius: 12px; margin-bottom: 30px; }
-        .card-title { font-size: 1.1rem; font-weight: 700; color: var(--primary); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-        
-        .form-group { margin-bottom: 20px; }
-        label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-        input, select { width: 100%; background: var(--bg-input); border: 1px solid var(--border); padding: 12px 16px; border-radius: 8px; color: white; font-size: 1rem; transition: 0.2s; }
-        input:focus, select:focus { border-color: var(--primary); outline: none; }
-        
-        .btn-primary { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
-        .btn-primary:hover { background: var(--primary-hover); }
+        .nav-item {
+            padding: 0.75rem 1rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
 
-        .selector-box { background: var(--bg-card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; }
-        .selector-box div { flex-grow: 1; max-width: 400px; }
+        .nav-item.active, .nav-item:hover {
+            background-color: #29292e;
+            color: var(--text-main);
+        }
 
-        /* CARDS DE MANUTENÇÃO */
-        .maintenance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
-        .maint-card { background: var(--bg-card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; display: flex; flex-direction: column; justify-content: space-between; }
-        .maint-info { display: flex; justify-content: space-between; margin-bottom: 15px; }
-        .maint-name { font-weight: 700; font-size: 1.1rem; }
-        .maint-status { font-size: 0.85rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; }
-        .status-ok { background: rgba(0, 230, 118, 0.15); color: var(--success); }
-        .status-alert { background: rgba(255, 170, 0, 0.15); color: #ffaa00; }
-        .status-critical { background: rgba(255, 85, 0, 0.15); color: var(--primary); }
-        
-        .progress-container { background: var(--bg-input); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
-        .progress-bar { height: 100%; width: 0%; transition: width 0.5s ease; }
-        .maint-desc { font-size: 0.85rem; color: var(--text-muted); }
+        .content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
 
-        /* HISTÓRICO */
-        .history-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .history-table th, .history-table td { padding: 14px; text-align: left; border-bottom: 1px solid var(--border); }
-        .history-table th { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }
+        /* CARDS & FORMS */
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
 
-        @media (max-width: 768px) {
-            body { flex-direction: column; }
-            sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); min-height: auto; }
-            .grid-forms { grid-template-columns: 1fr; }
-            main { padding: 20px; }
+        .maint-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 1.25rem;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .maint-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .maint-name {
+            font-weight: 600;
+        }
+
+        .maint-status {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .status-ok { background: rgba(0, 179, 126, 0.2); color: var(--success); }
+        .status-alert { background: rgba(255, 170, 0, 0.2); color: #ffaa00; }
+        .status-critical { background: rgba(50, 205, 50, 0.2); color: var(--primary); }
+
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background-color: var(--card-border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+        }
+
+        .progress-bar {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        form {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            padding: 1.5rem;
+            border-radius: 8px;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        input, select {
+            background: #121214;
+            border: 1px solid var(--card-border);
+            padding: 0.75rem;
+            border-radius: 6px;
+            color: var(--text-main);
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        /* BOTÃO COM FUNDO PRETO E TEXTO/BORDA VERDE LIMÃO */
+        button.btn-primary {
+            background-color: #121214;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            padding: 0.75rem;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        button.btn-primary:hover {
+            background-color: var(--primary);
+            color: #121214;
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        th {
+            background-color: #29292e;
+            color: var(--text-muted);
+            font-size: 0.85rem;
         }
     </style>
 </head>
 <body>
 
+    <!-- OVERLAY DE LOGIN / CADASTRO -->
     <div id="auth-overlay">
         <div class="auth-card">
-            <div class="auth-brand">BS.CUSTOM</div>
-            <div class="auth-subtitle" id="auth-msg">Acesse sua garagem técnica de projetos</div>
-            
-            <div class="auth-toggle">
-                <button id="tab-login" class="active" onclick="switchAuthMode(true)">LOGIN</button>
-                <button id="tab-register" onclick="switchAuthMode(false)">CADASTRAR</button>
+            <div class="brand" style="justify-content: center;">⚡ BS CUSTOM</div>
+            <div class="auth-tabs">
+                <button id="tab-login" class="auth-tab active" onclick="switchAuthMode(true)">Entrar</button>
+                <button id="tab-register" class="auth-tab" onclick="switchAuthMode(false)">Cadastrar</button>
             </div>
-
-            <form id="auth-form" onsubmit="handleAuth(event)">
+            <p id="auth-msg" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; text-align: center;">Acesse sua garagem técnica</p>
+            <form id="form-auth" onsubmit="handleAuth(event)" style="padding:0; border:none; background:none;">
                 <div class="form-group">
                     <label>E-mail</label>
                     <input type="email" id="auth-email" required placeholder="seu@email.com">
                 </div>
                 <div class="form-group">
                     <label>Senha</label>
-                    <input type="password" id="auth-password" required placeholder="••••••••" minlength="6">
+                    <input type="password" id="auth-password" required placeholder="******">
                 </div>
-                <button type="submit" class="btn-primary" id="auth-btn">Entrar no Sistema</button>
+                <button type="submit" id="auth-btn" class="btn-primary" style="margin-top: 0.5rem;">Entrar no Sistema</button>
             </form>
         </div>
     </div>
 
-    <sidebar>
-        <div class="sidebar-top">
-            <div class="sidebar-header">
-                <img src="logo.png" alt="BS.CUSTOM Logo" class="sidebar-logo">
-                <h1 class="sidebar-brand">BS.CUSTOM</h1>
-                <span class="sidebar-subtitle">v3.0 — garage control</span>
-            </div>
+    <!-- SIDEBAR / MENU -->
+    <div class="sidebar">
+        <div class="brand">⚡ BS CUSTOM</div>
+        <nav>
+            <div class="nav-item active" onclick="switchView('status', this)">📊 Status das Peças</div>
+            <div class="nav-item" onclick="switchView('lancar', this)">🛠️ Lançar Serviço</div>
+            <div class="nav-item" onclick="switchView('motos', this)">🏍️ Nova Moto</div>
+            <div class="nav-item" onclick="switchView('historico', this)">📋 Histórico</div>
+        </nav>
+        <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--card-border);">
+            <div id="display-user-email" style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.5rem; word-break: break-all;"></div>
+            <button onclick="logout()" style="background:none; border:none; color: var(--primary); cursor:pointer; font-size: 0.85rem;">Sair da Conta</button>
+        </div>
+    </div>
 
-            <div class="nav-menu">
-                <div class="nav-item active" onclick="switchView('garagem', this)"><i class="fa-solid fa-gauge"></i> Garagem</div>
-                <div class="nav-item" onclick="switchView('status', this)"><i class="fa-solid fa-wrench"></i> Status de Peças</div>
-                <div class="nav-item" onclick="switchView('historico', this)"><i class="fa-solid fa-history"></i> Histórico</div>
-            </div>
-            
-            <div class="user-panel">
-                <div class="user-email" id="display-user-email">Carregando...</div>
-                <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-sign-out-alt"></i> Sair</button>
-            </div>
+    <!-- CONTEÚDO PRINCIPAL -->
+    <div class="content">
+        <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;">
+            <label for="global-moto-selector" style="font-weight: bold;">Moto Selecionada:</label>
+            <select id="global-moto-selector" onchange="setActiveMoto(this.value)" style="min-width: 250px;">
+                <option value="">Carregando frotas...</option>
+            </select>
         </div>
 
-        <div class="sidebar-footer">
-            <p class="footer-text">
-                Desenvolvedor <span class="footer-author">Bruno Sabanelli</span>
-            </p>
-        </div>
-    </sidebar>
-
-    <main>
-        <div class="selector-box">
-            <div>
-                <label>Moto Ativa na Oficina</label>
-                <select id="global-moto-selector" onchange="setActiveMoto(this.value)">
-                    <option value="">Nenhuma moto cadastrada</option>
-                </select>
-            </div>
+        <div id="view-status" class="view-section active">
+            <h2>Status de Manutenção Preventiva</h2>
+            <div id="maint-cards-container" class="grid-cards"></div>
         </div>
 
-        <section id="view-garagem" class="view-section active">
-            <h2>Minha Garagem</h2>
-            <div class="grid-forms">
-                <div class="card">
-                    <div class="card-title"><i class="fa-solid fa-plus"></i> Adicionar Nova Moto</div>
-                    <form id="form-moto" onsubmit="cadastrarMoto(event)">
-                        <div class="form-group">
-                            <label>Modelo da Moto</label>
-                            <input type="text" id="moto-modelo" placeholder="Ex: Suzuki Intruder 125" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Ano</label>
-                            <input type="number" id="moto-ano" placeholder="Ex: 2013" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Odômetro Atual (KM)</label>
-                            <input type="number" id="moto-km" placeholder="Ex: 21000" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Média de KM Diária (Estimada)</label>
-                            <input type="number" id="moto-media" placeholder="Ex: 20" required>
-                        </div>
-                        <button type="submit" class="btn-primary">Salvar na Garagem</button>
-                    </form>
+        <div id="view-lancar" class="view-section">
+            <h2>Lançar Nova Manutenção</h2>
+            <form id="form-manutencao" onsubmit="cadastrarManutencao(event)">
+                <div class="form-group">
+                    <label>Componente / Peça</label>
+                    <select id="manut-tipo" required>
+                        <option value="Oleo Motor">Óleo do Motor</option>
+                        <option value="Filtro Oleo">Filtro de Óleo</option>
+                        <option value="Relação">Kit Relação</option>
+                        <option value="Vela">Vela de Ignição</option>
+                        <option value="Pneu Traseiro">Pneu Traseiro</option>
+                        <option value="Pneu Dianteiro">Pneu Dianteiro</option>
+                    </select>
                 </div>
-
-                <div class="card">
-                    <div class="card-title"><i class="fa-solid fa-oil-can"></i> Registrar Serviço / Manutenção</div>
-                    <form id="form-manutencao" onsubmit="cadastrarManutencao(event)">
-                        <div class="form-group">
-                            <label>Tipo de Componente</label>
-                            <select id="manut-tipo" required>
-                                <option value="Oleo Motor">Óleo do Motor</option>
-                                <option value="Filtro Oleo">Filtro de Óleo</option>
-                                <option value="Relação">Kit Relação (Corrente/Coroa/Pinhão)</option>
-                                <option value="Vela">Vela de Ignição</option>
-                                <option value="Pneu Traseiro">Pneu Traseiro</option>
-                                <option value="Pneu Dianteiro">Pneu Dianteiro</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>KM Realizada</label>
-                            <input type="number" id="manut-km" placeholder="Ex: 20500" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Data do Serviço</label>
-                            <input type="date" id="manut-data" required>
-                        </div>
-                        <button type="submit" class="btn-primary">Lançar Manutenção</button>
-                    </form>
+                <div class="form-group">
+                    <label>Quilometragem da Troca/Serviço (KM)</label>
+                    <input type="number" id="manut-km" required placeholder="Ex: 15400">
                 </div>
-            </div>
-        </section>
+                <div class="form-group">
+                    <label>Data do Serviço</label>
+                    <input type="date" id="manut-data" required>
+                </div>
+                <button type="submit" class="btn-primary">Registrar Serviço</button>
+            </form>
+        </div>
 
-        <section id="view-status" class="view-section">
-            <h2>Status de Peças & Consumíveis</h2>
-            <div class="maintenance-grid" id="maint-cards-container"></div>
-        </section>
+        <div id="view-motos" class="view-section">
+            <h2>Cadastrar Novo Veículo</h2>
+            <form id="form-moto" onsubmit="cadastrarMoto(event)">
+                <div class="form-group">
+                    <label>Modelo do Veículo</label>
+                    <input type="text" id="moto-modelo" required placeholder="Ex: Honda CG 160 Fan">
+                </div>
+                <div class="form-group">
+                    <label>Ano de Fabricação</label>
+                    <input type="number" id="moto-ano" required placeholder="Ex: 2022">
+                </div>
+                <div class="form-group">
+                    <label>Odômetro Atual (KM)</label>
+                    <input type="number" id="moto-km" required placeholder="Ex: 12000">
+                </div>
+                <div class="form-group">
+                    <label>Estimativa de Uso Diário (KM/Dia)</label>
+                    <input type="number" id="moto-media" required value="30" placeholder="Ex: 30">
+                </div>
+                <button type="submit" class="btn-primary">Salvar na Garagem</button>
+            </form>
+        </div>
 
-        <section id="view-historico" class="view-section">
-            <h2>Histórico Completo de Serviços</h2>
-            <div class="card" style="padding: 10px; overflow-x: auto;">
-                <table class="history-table">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Serviço / Componente</th>
-                            <th>KM do Evento</th>
-                            <th>Idade do Serviço</th>
-                        </tr>
-                    </thead>
-                    <tbody id="history-table-body"></tbody>
-                </table>
-            </div>
-        </section>
-    </main>
+        <div id="view-historico" class="view-section">
+            <h2>Histórico Completo de Manutenções</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Item</th>
+                        <th>Quilometragem</th>
+                        <th>Status</th>
+                        <th style="text-align: center;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="history-table-body"></tbody>
+            </table>
+        </div>
+    </div>
 
+    <!-- FIREBASE & LÓGICA DO SISTEMA -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // CONFIGURAÇÃO DO FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyBr_NKOSzmh2CwbR7SYaLAk_0TsYe39VTY",
             authDomain: "moto-sys.firebaseapp.com",
@@ -337,10 +410,15 @@
 
         window.switchAuthMode = function(mode) {
             isLoginMode = mode;
-            document.getElementById('tab-login').className = mode ? 'active' : '';
-            document.getElementById('tab-register').className = mode ? '' : 'active';
-            document.getElementById('auth-btn').innerText = mode ? 'Entrar no Sistema' : 'Criar Conta Técnica';
-            document.getElementById('auth-msg').innerText = mode ? 'Acesse sua garagem técnica de projetos' : 'Crie sua conta para gerenciar sua frota';
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegister = document.getElementById('tab-register');
+            const authBtn = document.getElementById('auth-btn');
+            const authMsg = document.getElementById('auth-msg');
+
+            if (tabLogin) tabLogin.className = mode ? 'auth-tab active' : 'auth-tab';
+            if (tabRegister) tabRegister.className = mode ? 'auth-tab' : 'auth-tab active';
+            if (authBtn) authBtn.innerText = mode ? 'Entrar no Sistema' : 'Criar Conta Técnica';
+            if (authMsg) authMsg.innerText = mode ? 'Acesse sua garagem técnica de projetos' : 'Crie sua conta para gerenciar sua frota';
         };
 
         window.handleAuth = async function(e) {
@@ -365,23 +443,31 @@
         };
 
         onAuthStateChanged(auth, (user) => {
+            const overlay = document.getElementById('auth-overlay');
+            const userEmailDisplay = document.getElementById('display-user-email');
+
             if (user) {
                 currentUser = user;
-                document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('display-user-email').innerText = user.email;
+                if (overlay) overlay.style.display = 'none';
+                if (userEmailDisplay) userEmailDisplay.innerText = user.email;
                 initApp();
             } else {
                 currentUser = null;
-                document.getElementById('auth-overlay').style.display = 'flex';
-                document.getElementById('display-user-email').innerText = '';
+                if (overlay) overlay.style.display = 'flex';
+                if (userEmailDisplay) userEmailDisplay.innerText = '';
                 limparDadosInterface();
             }
         });
 
         function limparDadosInterface() {
-            document.getElementById('global-moto-selector').innerHTML = '<option value="">Nenhuma moto cadastrada</option>';
-            document.getElementById('maint-cards-container').innerHTML = '';
-            document.getElementById('history-table-body').innerHTML = '';
+            const selector = document.getElementById('global-moto-selector');
+            const container = document.getElementById('maint-cards-container');
+            const historyTable = document.getElementById('history-table-body');
+
+            if (selector) selector.innerHTML = '<option value="">Nenhuma moto cadastrada</option>';
+            if (container) container.innerHTML = '';
+            if (historyTable) historyTable.innerHTML = '';
+
             activeMotoId = null;
             motosData = [];
         }
@@ -394,6 +480,8 @@
 
             onSnapshot(qMotos, (snapshot) => {
                 const selector = document.getElementById('global-moto-selector');
+                if (!selector) return;
+
                 selector.innerHTML = '';
                 motosData = [];
 
@@ -409,7 +497,7 @@
                     
                     const opt = document.createElement('option');
                     opt.value = moto.id;
-                    opt.innerText = `${moto.modelo} (${moto.ano})`;
+                    opt.innerText = `${moto.modelo} (${moto.ano}) — ${moto.odometro_atual || 0} KM`;
                     selector.appendChild(opt);
                 });
 
@@ -422,8 +510,10 @@
         }
 
         function limparPaineis() {
-            document.getElementById('maint-cards-container').innerHTML = '<p style="color: var(--text-muted)">Cadastre uma moto para visualizar o status.</p>';
-            document.getElementById('history-table-body').innerHTML = '<tr><td colspan="4" style="color: var(--text-muted); text-align: center;">Nenhum registro encontrado.</td></tr>';
+            const container = document.getElementById('maint-cards-container');
+            const historyTable = document.getElementById('history-table-body');
+            if (container) container.innerHTML = '<p style="color: var(--text-muted)">Cadastre uma moto para visualizar o status.</p>';
+            if (historyTable) historyTable.innerHTML = '<tr><td colspan="5" style="color: var(--text-muted); text-align: center;">Nenhum registro encontrado.</td></tr>';
         }
 
         window.setActiveMoto = function(id) {
@@ -470,7 +560,7 @@
 
             try {
                 await addDoc(collection(db, "motos"), novaMoto);
-                alert("Moto adicionada à sua garagem com sucesso!");
+                alert("Moto adicionada com sucesso!");
                 document.getElementById('form-moto').reset();
             } catch (err) {
                 console.error(err);
@@ -485,23 +575,23 @@
                 return;
             }
 
-            const kmRealizada = parseInt(document.getElementById('manut-km').value);
+            const kmLancada = parseInt(document.getElementById('manut-km').value);
+
             const novaManut = {
                 id_moto: activeMotoId,
                 id_usuario: currentUser.uid,
                 tipo_componente: document.getElementById('manut-tipo').value,
-                km_realizada: kmRealizada,
+                km_realizada: kmLancada,
                 data_servico: document.getElementById('manut-data').value
             };
 
             try {
                 await addDoc(collection(db, "manutencoes"), novaManut);
-                
-                // Atualiza o odômetro da moto de forma inteligente se o serviço foi feito em KM superior
+
                 const motoAtiva = motosData.find(m => m.id === activeMotoId);
-                if (motoAtiva && kmRealizada > motoAtiva.odometro_atual) {
+                if (motoAtiva && kmLancada > (motoAtiva.odometro_atual || 0)) {
                     const motoRef = doc(db, "motos", activeMotoId);
-                    await updateDoc(motoRef, { odometro_atual: kmRealizada });
+                    await updateDoc(motoRef, { odometro_atual: kmLancada });
                 }
 
                 alert("Serviço registrado com sucesso!");
@@ -512,33 +602,92 @@
             }
         };
 
+        window.excluirManutencao = async function(id) {
+            if (confirm("Tem certeza que deseja excluir este registro de manutenção?")) {
+                try {
+                    await deleteDoc(doc(db, "manutencoes", id));
+                    alert("Registro excluído com sucesso!");
+                } catch (err) {
+                    console.error(err);
+                    alert("Erro ao excluir registro: " + err.message);
+                }
+            }
+        };
+
+        window.editarManutencao = async function(id, kmAtual, dataAtual) {
+            const novaKm = prompt("Informe a nova KM da manutenção:", kmAtual);
+            if (novaKm === null || novaKm.trim() === "") return;
+
+            const novaData = prompt("Informe a nova data (AAAA-MM-DD):", dataAtual);
+            if (novaData === null || novaData.trim() === "") return;
+
+            try {
+                const manutRef = doc(db, "manutencoes", id);
+                await updateDoc(manutRef, {
+                    km_realizada: parseInt(novaKm),
+                    data_servico: novaData
+                });
+                alert("Manutenção atualizada com sucesso!");
+            } catch (err) {
+                console.error(err);
+                alert("Erro ao editar manutenção: " + err.message);
+            }
+        };
+
         function renderizarStatusPecas(moto, manutencoes) {
             const container = document.getElementById('maint-cards-container');
+            if (!container) return;
             container.innerHTML = '';
+
+            const odometroAtual = Number(moto.odometro_atual) || 0;
+            const mediaDiaria = Number(moto.km_diaria_estimada) || 1;
 
             Object.keys(LIMITES).forEach(tipo => {
                 const limite = LIMITES[tipo];
                 const ultimas = manutencoes.filter(m => m.tipo_componente === tipo);
-                const ultimaKm = ultimas.length > 0 ? ultimas[0].km_realizada : 0;
+                const ultimaManut = ultimas.length > 0 ? ultimas[0] : null;
+                const ultimaKm = ultimaManut ? Number(ultimaManut.km_realizada) : 0;
                 
-                const kmRodados = Math.max(0, moto.odometro_atual - ultimaKm);
-                let pctUtilizada = Math.min(100, (kmRodados / limite) * 100);
-                
-                // Inversão corrigida: a barra exibe a vida útil RESTANTE
-                let pctBarraRestante = 100 - pctUtilizada;
+                const kmRodados = Math.max(0, odometroAtual - ultimaKm);
+                const kmRestantes = limite - kmRodados;
+                let pctUso = Math.min(100, Math.max(0, (kmRodados / limite) * 100));
 
                 let statusTexto = "OK";
                 let statusClass = "status-ok";
                 let corBarra = "var(--success)";
+                let mensagemPrazo = "";
 
-                if (pctUtilizada >= 100) {
+                if (kmRestantes > 0) {
+                    const diasRestantes = Math.round(kmRestantes / mediaDiaria);
+                    if (diasRestantes > 30) {
+                        const meses = (diasRestantes / 30).toFixed(1);
+                        mensagemPrazo = `Faltam <strong>${kmRestantes} KM</strong> (~${meses} meses)`;
+                    } else {
+                        mensagemPrazo = `Faltam <strong>${kmRestantes} KM</strong> (~${diasRestantes} dias)`;
+                    }
+                } else {
+                    const kmVencidos = Math.abs(kmRestantes);
+                    mensagemPrazo = `<span style="color:var(--primary); font-weight:bold;">Vencido há ${kmVencidos} KM!</span>`;
+                }
+
+                if (pctUso >= 100) {
                     statusTexto = "CRÍTICO";
                     statusClass = "status-critical";
                     corBarra = "var(--primary)";
-                } else if (pctUtilizada >= 80) {
+                } else if (pctUso >= 80) {
                     statusTexto = "ALERTA";
                     statusClass = "status-alert";
                     corBarra = "#ffaa00";
+                }
+
+                let acoesHtml = '';
+                if (ultimaManut) {
+                    acoesHtml = `
+                        <div style="margin-top: 8px; display: flex; gap: 8px; justify-content: flex-end;">
+                            <button onclick="editarManutencao('${ultimaManut.id}', ${ultimaManut.km_realizada}, '${ultimaManut.data_servico}')" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem;" title="Editar Última Manutenção">✏️ Editar</button>
+                            <button onclick="excluirManutencao('${ultimaManut.id}')" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.85rem;" title="Excluir Registro">🗑️ Excluir</button>
+                        </div>
+                    `;
                 }
 
                 const card = document.createElement('div');
@@ -550,12 +699,16 @@
                             <span class="maint-status ${statusClass}">${statusTexto}</span>
                         </div>
                         <div class="progress-container">
-                            <div class="progress-bar" style="width: ${pctBarraRestante}%; background-color: ${corBarra}"></div>
+                            <div class="progress-bar" style="width: ${pctUso}%; background-color: ${corBarra}"></div>
                         </div>
                     </div>
                     <div class="maint-desc">
-                        Rodou <strong>${kmRodados} KM</strong> de um limite de ${limite} KM.<br>
-                        <span style="font-size:0.75rem; color: var(--text-muted)">Última troca em: ${ultimaKm} KM</span>
+                        ${mensagemPrazo}<br>
+                        <span style="font-size:0.78rem; color: var(--text-muted)">
+                            Uso: ${kmRodados} KM de ${limite} KM
+                            ${ultimaKm > 0 ? `<br>(Última troca em ${ultimaKm} KM)` : '<br>(Nenhuma troca registrada)'}
+                        </span>
+                        ${acoesHtml}
                     </div>
                 `;
                 container.appendChild(card);
@@ -564,10 +717,11 @@
 
         function renderizarHistorico(manutencoes) {
             const tbody = document.getElementById('history-table-body');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
             if (manutencoes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="color: var(--text-muted); text-align: center;">Nenhum serviço registrado nesta moto.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="color: var(--text-muted); text-align: center;">Nenhum serviço registrado nesta moto.</td></tr>';
                 return;
             }
 
@@ -578,7 +732,11 @@
                     <td><strong>${dataFormatada}</strong></td>
                     <td><span style="color: var(--primary); font-weight:600;">${traduzirTipo(m.tipo_componente)}</span></td>
                     <td>${m.km_realizada} KM</td>
-                    <td><small style="color: var(--text-muted)">Registrado na base</small></td>
+                    <td><small style="color: var(--text-muted)">Registrado</small></td>
+                    <td style="text-align: center;">
+                        <button onclick="editarManutencao('${m.id}', ${m.km_realizada}, '${m.data_servico}')" style="background:none; border:none; cursor:pointer; margin-right: 5px;" title="Editar">✏️</button>
+                        <button onclick="excluirManutencao('${m.id}')" style="background:none; border:none; cursor:pointer;" title="Excluir">🗑️</button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -600,8 +758,9 @@
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             
-            document.getElementById(`view-${viewName}`).classList.add('active');
-            element.classList.add('active');
+            const target = document.getElementById(`view-${viewName}`);
+            if (target) target.classList.add('active');
+            if (element) element.classList.add('active');
         };
     </script>
 </body>
