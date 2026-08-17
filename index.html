@@ -52,6 +52,7 @@
             justify-content: space-between;
             position: relative;
             min-height: 100vh;
+            flex-shrink: 0;
         }
         
         .sidebar-top { padding: 30px 20px 20px 20px; }
@@ -96,6 +97,28 @@
         .btn-logout { background: transparent; border: 1px solid #ff3333; color: #ff3333; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; transition: 0.2s; }
         .btn-logout:hover { background: #ff3333; color: white; }
 
+        /* BOTÃO DE ATIVAR NOTIFICAÇÕES */
+        .btn-notify {
+            background: #242424;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        .btn-notify:hover {
+            background: var(--primary);
+            color: #000;
+        }
+
         .sidebar-footer { 
             padding: 20px 15px; 
             text-align: center; 
@@ -129,34 +152,32 @@
         .btn-primary { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
         .btn-primary:hover { background: var(--primary-hover); }
 
-        /* CONTAINER SELECTOR COM SUPORTE A POSICIONAMENTO */
+        /* PAINEL DE SELEÇÃO E BOTÃO DE EXCLUSÃO AJUSTADOS */
         .selector-box { 
             position: relative; 
             background: var(--bg-card); 
             border: 1px solid var(--border); 
-            padding: 24px; 
+            padding: 20px 24px; 
             border-radius: 12px; 
             margin-bottom: 30px; 
             display: flex; 
-            align-items: center; 
+            align-items: flex-end; 
             justify-content: space-between;
+            gap: 20px;
         }
         
         .selector-box .select-group { 
             flex-grow: 1; 
-            max-width: 400px; 
+            max-width: 450px; 
+            margin-bottom: 0;
         }
 
-        /* BOTÃO EXCLUIR MOTO — NO CANTO SUPERIOR DIREITO */
         .btn-delete-moto {
-            position: absolute;
-            top: 20px;
-            right: 20px;
             background: rgba(255, 51, 51, 0.12);
             color: #ff3333;
             border: 1px solid #ff3333;
-            padding: 8px 16px;
-            border-radius: 6px;
+            padding: 12px 20px;
+            border-radius: 8px;
             font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
@@ -165,7 +186,10 @@
             gap: 8px;
             transition: 0.2s;
             white-space: nowrap;
+            height: 48px;
+            z-index: 10;
         }
+
         .btn-delete-moto:hover {
             background: #ff3333;
             color: #ffffff;
@@ -196,8 +220,9 @@
             sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); min-height: auto; }
             .grid-forms { grid-template-columns: 1fr; }
             main { padding: 20px; }
-            .selector-box { flex-direction: column; align-items: flex-start; gap: 15px; padding-top: 55px; }
+            .selector-box { flex-direction: column; align-items: stretch; }
             .selector-box .select-group { max-width: 100%; width: 100%; }
+            .btn-delete-moto { width: 100%; justify-content: center; }
         }
     </style>
 </head>
@@ -243,6 +268,7 @@
             
             <div class="user-panel">
                 <div class="user-email" id="display-user-email">Carregando...</div>
+                <button class="btn-notify" id="btn-notifications" onclick="solicitarPermissaoNotificacao()"><i class="fa-solid fa-bell"></i> Ativar Alertas</button>
                 <button class="btn-logout" onclick="logout()"><i class="fa-solid fa-sign-out-alt"></i> Sair</button>
             </div>
         </div>
@@ -262,7 +288,7 @@
                     <option value="">Nenhuma moto cadastrada</option>
                 </select>
             </div>
-            <button class="btn-delete-moto" onclick="excluirMotoAtiva()" title="Excluir moto selecionada">
+            <button type="button" class="btn-delete-moto" onclick="excluirMotoAtiva()" title="Excluir moto selecionada">
                 <i class="fa-solid fa-trash-can"></i> Excluir Moto
             </button>
         </div>
@@ -346,8 +372,9 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, getDocs, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, setDoc, updateDoc, deleteDoc, getDocs, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBr_NKOSzmh2CwbR7SYaLAk_0TsYe39VTY",
@@ -362,6 +389,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        const messaging = getMessaging(app);
 
         let currentUser = null;
         let isLoginMode = true;
@@ -376,6 +404,54 @@
             "Pneu Traseiro": 12000,
             "Pneu Dianteiro": 18000
         };
+
+        // REGISTRO DO SERVICE WORKER E PERMISSÃO DE NOTIFICAÇÃO
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/firebase-messaging-sw.js')
+            .then((registration) => {
+                console.log('Service Worker registrado com sucesso:', registration.scope);
+            }).catch((err) => {
+                console.error('Falha ao registrar Service Worker:', err);
+            });
+        }
+
+        window.solicitarPermissaoNotificacao = async function() {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    // Chave VAPID pública gerada no console do Firebase para Web Push
+                    const token = await getToken(messaging, { 
+                        vapidKey: 'B...' // Substitua pela sua chave VAPID se necessário
+                    });
+
+                    if (token && currentUser) {
+                        await setDoc(doc(db, "usuarios", currentUser.uid), {
+                            fcmToken: token,
+                            email: currentUser.email,
+                            atualizadoEm: new Date().toISOString()
+                        }, { merge: true });
+                    }
+                    
+                    document.getElementById('btn-notifications').style.display = 'none';
+                    alert("Alertas ativados com sucesso! Você receberá avisos no seu celular.");
+                } else {
+                    alert("Permissão para notificações foi negada.");
+                }
+            } catch (error) {
+                console.error("Erro ao ativar notificações:", error);
+                alert("Erro ao configurar notificações no dispositivo.");
+            }
+        };
+
+        onMessage(messaging, (payload) => {
+            console.log('Notificação recebida com app aberto:', payload);
+            if (Notification.permission === 'granted') {
+                new Notification(payload.notification.title, {
+                    body: payload.notification.body,
+                    icon: '/logo.png'
+                });
+            }
+        });
 
         window.switchAuthMode = function(mode) {
             isLoginMode = mode;
@@ -411,6 +487,11 @@
                 currentUser = user;
                 document.getElementById('auth-overlay').style.display = 'none';
                 document.getElementById('display-user-email').innerText = user.email;
+
+                if (Notification.permission === 'granted') {
+                    document.getElementById('btn-notifications').style.display = 'none';
+                }
+
                 initApp();
             } else {
                 currentUser = null;
@@ -605,6 +686,8 @@
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
 
+            const alertasPendentes = [];
+
             Object.keys(LIMITES).forEach(tipo => {
                 const limite = LIMITES[tipo];
                 const ultimas = manutencoes.filter(m => m.tipo_componente === tipo);
@@ -666,11 +749,13 @@
                     statusClass = "status-critical";
                     corBarra = "var(--primary)";
                     textoEstimativa = `<span style="color: #ff3333;"><i class="fa-solid fa-triangle-exclamation"></i> Vencido/Troca Necessária!</span>`;
+                    alertasPendentes.push(`${traduzirTipo(tipo)} precisa de troca IMEDIATA!`);
                 } else if (pctUtilizada >= 80 || diasRestantes <= 15) {
                     statusTexto = "ALERTA";
                     statusClass = "status-alert";
                     corBarra = "#ffaa00";
                     textoEstimativa = `<i class="fa-regular fa-clock"></i> Faltam ~${diasRestantes} dias (${kmRestantes} KM) • Est.: ${dataPrevistaStr}`;
+                    alertasPendentes.push(`${traduzirTipo(tipo)} vence em ~${diasRestantes} dias.`);
                 } else {
                     textoEstimativa = `<i class="fa-regular fa-calendar-check"></i> Próxima troca: ${dataPrevistaStr} (~${diasRestantes} dias restan.)`;
                 }
@@ -697,6 +782,23 @@
                 `;
                 container.appendChild(card);
             });
+
+            // Se existirem componentes próximos da troca ou críticos, envia notificação Push Local no celular
+            if (alertasPendentes.length > 0 && Notification.permission === 'granted') {
+                dispararAlertaLocal(moto.modelo, alertasPendentes);
+            }
+        }
+
+        function dispararAlertaLocal(modeloMoto, mensagens) {
+            // Evita enviar alertas repetidos dentro da mesma sessão
+            if (sessionStorage.getItem('alerta_enviado_' + activeMotoId)) return;
+
+            new Notification(`BS.CUSTOM — Atenção (${modeloMoto})`, {
+                body: mensagens.join('\n'),
+                icon: '/logo.png'
+            });
+
+            sessionStorage.setItem('alerta_enviado_' + activeMotoId, 'true');
         }
 
         function renderizarHistorico(manutencoes) {
