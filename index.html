@@ -203,7 +203,7 @@
         .maint-status { font-size: 0.85rem; font-weight: 600; padding: 4px 8px; border-radius: 4px; }
         .status-ok { background: rgba(0, 230, 118, 0.15); color: var(--success); }
         .status-alert { background: rgba(255, 170, 0, 0.15); color: #ffaa00; }
-        .status-critical { background: rgba(255, 85, 0, 0.15); color: var(--primary); }
+        .status-critical { background: rgba(255, 85, 0, 0.15); color: #ff3333; }
         
         .progress-container { background: var(--bg-input); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
         .progress-bar { height: 100%; width: 0%; transition: width 0.5s ease; }
@@ -406,45 +406,43 @@
         };
 
         // REGISTRO DO SERVICE WORKER E PERMISSÃO DE NOTIFICAÇÃO
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/moto-sys/firebase-messaging-sw.js', { scope: '/moto-sys/' })
-    .then((registration) => {
-        console.log('Service Worker Firebase registrado com sucesso:', registration.scope);
-    })
-    .catch((err) => {
-        console.error('Falha ao registrar Service Worker:', err);
-    });
-}
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/moto-sys/firebase-messaging-sw.js', { scope: '/moto-sys/' })
+            .then((registration) => {
+                console.log('Service Worker Firebase registrado com sucesso:', registration.scope);
+            })
+            .catch((err) => {
+                console.error('Falha ao registrar Service Worker:', err);
+            });
+        }
 
         window.solicitarPermissaoNotificacao = async function() {
-    try {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-            
-            // Registra apontando explicitamente para a pasta do repositório
-            const registration = await navigator.serviceWorker.register('/moto-sys/firebase-messaging-sw.js', { scope: '/moto-sys/' });
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const registration = await navigator.serviceWorker.register('/moto-sys/firebase-messaging-sw.js', { scope: '/moto-sys/' });
 
-            const token = await getToken(messaging, { 
-                vapidKey: 'SUA_CHAVE_VAPID_AQUI',
-                serviceWorkerRegistration: registration
-            });
+                    const token = await getToken(messaging, { 
+                        vapidKey: 'SUA_CHAVE_VAPID_AQUI',
+                        serviceWorkerRegistration: registration
+                    });
 
-            if (token && currentUser) {
-                await setDoc(doc(db, "usuarios", currentUser.uid), {
-                    fcmToken: token,
-                    email: currentUser.email,
-                    atualizadoEm: new Date().toISOString()
-                }, { merge: true });
+                    if (token && currentUser) {
+                        await setDoc(doc(db, "usuarios", currentUser.uid), {
+                            fcmToken: token,
+                            email: currentUser.email,
+                            atualizadoEm: new Date().toISOString()
+                        }, { merge: true });
+                    }
+                    
+                    alert("Alertas ativados com sucesso!");
+                } else {
+                    alert("Permissão para notificações foi negada.");
+                }
+            } catch (error) {
+                console.error("Erro ao ativar notificações:", error);
             }
-            
-            alert("Alertas ativados com sucesso!");
-        } else {
-            alert("Permissão para notificações foi negada.");
-        }
-    } catch (error) {
-        console.error("Erro ao ativar notificações:", error);
-    }
-};
+        };
 
         onMessage(messaging, (payload) => {
             console.log('Notificação recebida com app aberto:', payload);
@@ -689,8 +687,6 @@ if ('serviceWorker' in navigator) {
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
 
-            const alertasPendentes = [];
-
             Object.keys(LIMITES).forEach(tipo => {
                 const limite = LIMITES[tipo];
                 const ultimas = manutencoes.filter(m => m.tipo_componente === tipo);
@@ -719,89 +715,55 @@ if ('serviceWorker' in navigator) {
                 }
 
                 const kmRodados = Math.max(kmRodadosManual, kmEstimadosPorData);
+                const percentual = Math.min(100, Math.round((kmRodados / limite) * 100));
+                const kmRestantes = limite - kmRodados;
 
-                let pctUtilizada = Math.min(100, (kmRodados / limite) * 100);
-                let pctBarraRestante = Math.max(0, 100 - pctUtilizada);
-                const kmRestantes = Math.max(0, limite - kmRodados);
-
-                let dataPrevista = new Date();
-                let diasRestantes = 0;
-
-                if (dataManutencao) {
-                    const totalDiasDuracao = Math.round(limite / kmDiario);
-                    dataPrevista = new Date(dataManutencao);
-                    dataPrevista.setDate(dataPrevista.getDate() + totalDiasDuracao);
-
-                    const diffRestanteMs = dataPrevista.getTime() - hoje.getTime();
-                    diasRestantes = Math.ceil(diffRestanteMs / (1000 * 60 * 60 * 24));
-                } else {
-                    diasRestantes = Math.ceil(kmRestantes / kmDiario);
-                    dataPrevista.setDate(hoje.getDate() + diasRestantes);
-                }
-
-                const dataPrevistaStr = dataPrevista.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                const dataServicoStr = dataManutencao ? dataManutencao.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Não informada';
-
-                let statusTexto = "OK";
                 let statusClass = "status-ok";
-                let corBarra = "var(--success)";
-                let textoEstimativa = "";
+                let statusTexto = "OK";
+                let barColor = "var(--success)";
 
-                if (pctUtilizada >= 100 || diasRestantes <= 0) {
-                    statusTexto = "CRÍTICO";
+                if (percentual >= 100) {
                     statusClass = "status-critical";
-                    corBarra = "var(--primary)";
-                    textoEstimativa = `<span style="color: #ff3333;"><i class="fa-solid fa-triangle-exclamation"></i> Vencido/Troca Necessária!</span>`;
-                    alertasPendentes.push(`${traduzirTipo(tipo)} precisa de troca IMEDIATA!`);
-                } else if (pctUtilizada >= 80 || diasRestantes <= 15) {
-                    statusTexto = "ALERTA";
+                    statusTexto = "TROCA URGENTE";
+                    barColor = "#ff3333";
+                } else if (percentual >= 80) {
                     statusClass = "status-alert";
-                    corBarra = "#ffaa00";
-                    textoEstimativa = `<i class="fa-regular fa-clock"></i> Faltam ~${diasRestantes} dias (${kmRestantes} KM) • Est.: ${dataPrevistaStr}`;
-                    alertasPendentes.push(`${traduzirTipo(tipo)} vence em ~${diasRestantes} dias.`);
-                } else {
-                    textoEstimativa = `<i class="fa-regular fa-calendar-check"></i> Próxima troca: ${dataPrevistaStr} (~${diasRestantes} dias restan.)`;
+                    statusTexto = "ATENÇÃO";
+                    barColor = "#ffaa00";
                 }
 
-                const card = document.createElement('div');
-                card.className = 'maint-card';
-                card.innerHTML = `
-                    <div>
-                        <div class="maint-info">
-                            <span class="maint-name" style="color: #ffffff;">${traduzirTipo(tipo)}</span>
-                            <span class="maint-status ${statusClass}">${statusTexto}</span>
+                let etaTexto = "";
+                if (kmRestantes > 0) {
+                    const diasRestantes = Math.ceil(kmRestantes / kmDiario);
+                    const dataPrevista = new Date();
+                    dataPrevista.setDate(dataPrevista.getDate() + diasRestantes);
+                    const dataFormatada = dataPrevista.toLocaleDateString('pt-BR');
+                    etaTexto = `Troca prevista em ~${diasRestantes} dias (${dataFormatada})`;
+                } else {
+                    etaTexto = "Limite de uso atingido! Realize a manutenção.";
+                }
+
+                const cardHtml = `
+                    <div class="maint-card">
+                        <div>
+                            <div class="maint-info">
+                                <span class="maint-name">${tipo}</span>
+                                <span class="maint-status ${statusClass}">${statusTexto}</span>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-bar" style="width: ${percentual}%; background-color: ${barColor};"></div>
+                            </div>
+                            <div class="maint-desc">
+                                <strong>${kmRodados} km</strong> rodados de <strong>${limite} km</strong> (${percentual}%)
+                            </div>
                         </div>
-                        <div class="progress-container">
-                            <div class="progress-bar" style="width: ${pctBarraRestante}%; background-color: ${corBarra}"></div>
-                        </div>
-                    </div>
-                    <div class="maint-desc">
-                        Rodou <strong>${kmRodados} KM</strong> de ${limite} KM limite.<br>
-                        <span style="font-size:0.75rem; color: var(--text-muted)">Última troca em: ${dataServicoStr} (${ultimaKm} KM)</span>
                         <div class="maint-eta">
-                            ${textoEstimativa}
+                            <i class="fa-solid fa-calendar-day"></i> ${etaTexto}
                         </div>
                     </div>
                 `;
-                container.appendChild(card);
+                container.innerHTML += cardHtml;
             });
-
-            // Se existirem componentes próximos da troca ou críticos, envia notificação Push Local no celular
-            if (alertasPendentes.length > 0 && Notification.permission === 'granted') {
-                dispararAlertaLocal(moto.modelo, alertasPendentes);
-            }
-        }
-
-        function dispararAlertaLocal(modeloMoto, mensagens) {
-            // Evita enviar alertas repetidos dentro da mesma sessão
-            if (sessionStorage.getItem('alerta_enviado_' + activeMotoId)) return;
-
-            new Notification(`BS.CUSTOM — Atenção (${modeloMoto})`, {
-                body: mensagens.join('\n'),
-                icon: '/logo.png'
-            });
-
-            sessionStorage.setItem('alerta_enviado_' + activeMotoId, 'true');
         }
 
         function renderizarHistorico(manutencoes) {
@@ -809,47 +771,34 @@ if ('serviceWorker' in navigator) {
             tbody.innerHTML = '';
 
             if (manutencoes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="color: var(--text-muted); text-align: center;">Nenhum serviço registrado nesta moto.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="color: var(--text-muted); text-align: center;">Nenhuma manutenção registrada para esta moto.</td></tr>';
                 return;
             }
 
             manutencoes.forEach(m => {
-                let dataFormatada = 'Não informada';
-                if (m.data_servico) {
+                let dataFormatada = m.data_servico || '-';
+                if (m.data_servico && m.data_servico.includes('-')) {
                     const p = m.data_servico.split('-');
-                    if (p.length === 3) {
-                        dataFormatada = `${p[2]}/${p[1]}/${p[0]}`;
-                    }
+                    if (p.length === 3) dataFormatada = `${p[2]}/${p[1]}/${p[0]}`;
                 }
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><strong>${dataFormatada}</strong></td>
-                    <td><span style="color: var(--primary); font-weight:600;">${traduzirTipo(m.tipo_componente)}</span></td>
+                    <td>${dataFormatada}</td>
+                    <td><strong>${m.tipo_componente}</strong></td>
                     <td>${m.km_realizada} KM</td>
-                    <td><small style="color: var(--success)"><i class="fa-solid fa-check"></i> Concluído</small></td>
+                    <td><span class="maint-status status-ok">Concluído</span></td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function traduzirTipo(tipo) {
-            const mapas = {
-                "Oleo Motor": "Óleo do Motor",
-                "Filtro Oleo": "Filtro de Óleo",
-                "Relação": "Kit Relação",
-                "Vela": "Vela de Ignição",
-                "Pneu Traseiro": "Pneu Traseiro",
-                "Pneu Dianteiro": "Pneu Dianteiro"
-            };
-            return mapas[tipo] || tipo;
-        }
+        window.switchView = function(viewId, element) {
+            document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
 
-        window.switchView = function(viewName, element) {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-            
-            document.getElementById(`view-${viewName}`).classList.add('active');
-            element.classList.add('active');
+            document.getElementById(`view-${viewId}`).classList.add('active');
+            if (element) element.classList.add('active');
         };
     </script>
 </body>
