@@ -294,7 +294,6 @@
 
     <!-- CONTEÚDO PRINCIPAL -->
     <div class="content">
-        <!-- SELETOR DE MOTO SELECIONADA -->
         <div style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem;">
             <label for="global-moto-selector" style="font-weight: bold;">Moto Selecionada:</label>
             <select id="global-moto-selector" onchange="setActiveMoto(this.value)" style="min-width: 250px;">
@@ -302,15 +301,11 @@
             </select>
         </div>
 
-        <!-- PAINEL 1: STATUS DAS PEÇAS -->
         <div id="view-status" class="view-section active">
             <h2>Status de Manutenção Preventiva</h2>
-            <div id="maint-cards-container" class="grid-cards">
-                <!-- Cards renderizados dinamicamente via JS -->
-            </div>
+            <div id="maint-cards-container" class="grid-cards"></div>
         </div>
 
-        <!-- PAINEL 2: LANÇAR MANUTENÇÃO -->
         <div id="view-lancar" class="view-section">
             <h2>Lançar Nova Manutenção</h2>
             <form id="form-manutencao" onsubmit="cadastrarManutencao(event)">
@@ -337,7 +332,6 @@
             </form>
         </div>
 
-        <!-- PAINEL 3: CADASTRAR MOTO -->
         <div id="view-motos" class="view-section">
             <h2>Cadastrar Novo Veículo</h2>
             <form id="form-moto" onsubmit="cadastrarMoto(event)">
@@ -361,7 +355,6 @@
             </form>
         </div>
 
-        <!-- PAINEL 4: HISTÓRICO -->
         <div id="view-historico" class="view-section">
             <h2>Histórico Completo de Manutenções</h2>
             <table>
@@ -374,14 +367,12 @@
                         <th style="text-align: center;">Ações</th>
                     </tr>
                 </thead>
-                <tbody id="history-table-body">
-                    <!-- Registros renderizados via JS -->
-                </tbody>
+                <tbody id="history-table-body"></tbody>
             </table>
         </div>
     </div>
 
-    <!-- FIREBASE & SCRIPT DE LÓGICA DO SISTEMA -->
+    <!-- FIREBASE & LOGICA BLINDADA CONTRA ERROS -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -417,10 +408,15 @@
 
         window.switchAuthMode = function(mode) {
             isLoginMode = mode;
-            document.getElementById('tab-login').className = mode ? 'auth-tab active' : 'auth-tab';
-            document.getElementById('tab-register').className = mode ? 'auth-tab' : 'auth-tab active';
-            document.getElementById('auth-btn').innerText = mode ? 'Entrar no Sistema' : 'Criar Conta Técnica';
-            document.getElementById('auth-msg').innerText = mode ? 'Acesse sua garagem técnica de projetos' : 'Crie sua conta para gerenciar sua frota';
+            const tabLogin = document.getElementById('tab-login');
+            const tabRegister = document.getElementById('tab-register');
+            const authBtn = document.getElementById('auth-btn');
+            const authMsg = document.getElementById('auth-msg');
+
+            if (tabLogin) tabLogin.className = mode ? 'auth-tab active' : 'auth-tab';
+            if (tabRegister) tabRegister.className = mode ? 'auth-tab' : 'auth-tab active';
+            if (authBtn) authBtn.innerText = mode ? 'Entrar no Sistema' : 'Criar Conta Técnica';
+            if (authMsg) authMsg.innerText = mode ? 'Acesse sua garagem técnica de projetos' : 'Crie sua conta para gerenciar sua frota';
         };
 
         window.handleAuth = async function(e) {
@@ -444,24 +440,33 @@
             signOut(auth);
         };
 
+        // ESCUTADOR TRATADO CONTRA ERRO NULL
         onAuthStateChanged(auth, (user) => {
+            const overlay = document.getElementById('auth-overlay');
+            const userEmailDisplay = document.getElementById('display-user-email');
+
             if (user) {
                 currentUser = user;
-                document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('display-user-email').innerText = user.email;
+                if (overlay) overlay.style.display = 'none';
+                if (userEmailDisplay) userEmailDisplay.innerText = user.email;
                 initApp();
             } else {
                 currentUser = null;
-                document.getElementById('auth-overlay').style.display = 'flex';
-                document.getElementById('display-user-email').innerText = '';
+                if (overlay) overlay.style.display = 'flex';
+                if (userEmailDisplay) userEmailDisplay.innerText = '';
                 limparDadosInterface();
             }
         });
 
         function limparDadosInterface() {
-            document.getElementById('global-moto-selector').innerHTML = '<option value="">Nenhuma moto cadastrada</option>';
-            document.getElementById('maint-cards-container').innerHTML = '';
-            document.getElementById('history-table-body').innerHTML = '';
+            const selector = document.getElementById('global-moto-selector');
+            const container = document.getElementById('maint-cards-container');
+            const historyTable = document.getElementById('history-table-body');
+
+            if (selector) selector.innerHTML = '<option value="">Nenhuma moto cadastrada</option>';
+            if (container) container.innerHTML = '';
+            if (historyTable) historyTable.innerHTML = '';
+
             activeMotoId = null;
             motosData = [];
         }
@@ -474,6 +479,8 @@
 
             onSnapshot(qMotos, (snapshot) => {
                 const selector = document.getElementById('global-moto-selector');
+                if (!selector) return;
+
                 selector.innerHTML = '';
                 motosData = [];
 
@@ -502,8 +509,10 @@
         }
 
         function limparPaineis() {
-            document.getElementById('maint-cards-container').innerHTML = '<p style="color: var(--text-muted)">Cadastre uma moto para visualizar o status.</p>';
-            document.getElementById('history-table-body').innerHTML = '<tr><td colspan="5" style="color: var(--text-muted); text-align: center;">Nenhum registro encontrado.</td></tr>';
+            const container = document.getElementById('maint-cards-container');
+            const historyTable = document.getElementById('history-table-body');
+            if (container) container.innerHTML = '<p style="color: var(--text-muted)">Cadastre uma moto para visualizar o status.</p>';
+            if (historyTable) historyTable.innerHTML = '<tr><td colspan="5" style="color: var(--text-muted); text-align: center;">Nenhum registro encontrado.</td></tr>';
         }
 
         window.setActiveMoto = function(id) {
@@ -626,6 +635,7 @@
 
         function renderizarStatusPecas(moto, manutencoes) {
             const container = document.getElementById('maint-cards-container');
+            if (!container) return;
             container.innerHTML = '';
 
             const odometroAtual = Number(moto.odometro_atual) || 0;
@@ -706,6 +716,7 @@
 
         function renderizarHistorico(manutencoes) {
             const tbody = document.getElementById('history-table-body');
+            if (!tbody) return;
             tbody.innerHTML = '';
 
             if (manutencoes.length === 0) {
@@ -746,8 +757,9 @@
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             
-            document.getElementById(`view-${viewName}`).classList.add('active');
-            element.classList.add('active');
+            const target = document.getElementById(`view-${viewName}`);
+            if (target) target.classList.add('active');
+            if (element) element.classList.add('active');
         };
     </script>
 </body>
