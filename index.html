@@ -15,7 +15,7 @@
             --bg-card: #1a1a1a;
             --bg-input: #242424;
             --primary: #32CD32;
-            --primary-hover: #28a745
+            --primary-hover: #28a745;
             --text-main: #ffffff;
             --text-muted: #a0a0a0;
             --border: #2d2d2d;
@@ -42,7 +42,7 @@
         .auth-toggle button { flex: 1; padding: 10px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-radius: 6px; font-weight: 600; transition: 0.2s; }
         .auth-toggle button.active { background: var(--primary); color: white; }
         
-        /* INTERFACE PRINCIPAL - BARRA LATERAL COM FLEXBOX */
+        /* INTERFACE PRINCIPAL */
         sidebar { 
             width: 260px; 
             background: var(--bg-card); 
@@ -56,7 +56,6 @@
         
         .sidebar-top { padding: 30px 20px 20px 20px; }
         
-        /* CABEÇALHO DA LOGO */
         .sidebar-header { 
             text-align: center; 
             padding-bottom: 25px; 
@@ -97,7 +96,6 @@
         .btn-logout { background: transparent; border: 1px solid #ff3333; color: #ff3333; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; transition: 0.2s; }
         .btn-logout:hover { background: #ff3333; color: white; }
 
-        /* RODAPÉ FIXO NO FIM */
         .sidebar-footer { 
             padding: 20px 15px; 
             text-align: center; 
@@ -146,7 +144,8 @@
         
         .progress-container { background: var(--bg-input); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
         .progress-bar { height: 100%; width: 0%; transition: width 0.5s ease; }
-        .maint-desc { font-size: 0.85rem; color: var(--text-muted); }
+        .maint-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
+        .maint-eta { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 0.8rem; color: #32CD32; font-weight: 600; }
 
         /* HISTÓRICO */
         .history-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -243,8 +242,8 @@
                             <input type="number" id="moto-km" placeholder="Ex: 21000" required>
                         </div>
                         <div class="form-group">
-                            <label>Média de KM Diária (Estimada)</label>
-                            <input type="number" id="moto-media" placeholder="Ex: 20" required>
+                            <label>Média de KM Diária (Padrão: 30 km/dia)</label>
+                            <input type="number" id="moto-media" placeholder="Ex: 30" value="30" required>
                         </div>
                         <button type="submit" class="btn-primary">Salvar na Garagem</button>
                     </form>
@@ -464,7 +463,7 @@
                 modelo: document.getElementById('moto-modelo').value,
                 ano: parseInt(document.getElementById('moto-ano').value),
                 odometro_atual: parseInt(document.getElementById('moto-km').value),
-                km_diaria_estimada: parseInt(document.getElementById('moto-media').value),
+                km_diaria_estimada: parseInt(document.getElementById('moto-media').value) || 30,
                 id_usuario: currentUser.uid
             };
 
@@ -497,7 +496,6 @@
             try {
                 await addDoc(collection(db, "manutencoes"), novaManut);
                 
-                // Atualiza o odômetro da moto de forma inteligente se o serviço foi feito em KM superior
                 const motoAtiva = motosData.find(m => m.id === activeMotoId);
                 if (motoAtiva && kmRealizada > motoAtiva.odometro_atual) {
                     const motoRef = doc(db, "motos", activeMotoId);
@@ -516,6 +514,9 @@
             const container = document.getElementById('maint-cards-container');
             container.innerHTML = '';
 
+            // Define KM diário a ser usado (usa o cadastro ou o padrão de 30 km/dia)
+            const kmDiario = moto.km_diaria_estimada && moto.km_diaria_estimada > 0 ? moto.km_diaria_estimada : 30;
+
             Object.keys(LIMITES).forEach(tipo => {
                 const limite = LIMITES[tipo];
                 const ultimas = manutencoes.filter(m => m.tipo_componente === tipo);
@@ -523,22 +524,34 @@
                 
                 const kmRodados = Math.max(0, moto.odometro_atual - ultimaKm);
                 let pctUtilizada = Math.min(100, (kmRodados / limite) * 100);
-                
-                // Inversão corrigida: a barra exibe a vida útil RESTANTE
                 let pctBarraRestante = 100 - pctUtilizada;
+
+                // Cálculo da estimativa de tempo restante
+                const kmRestantes = Math.max(0, limite - kmRodados);
+                const diasRestantes = Math.ceil(kmRestantes / kmDiario);
+                
+                // Previsão de data da próxima troca
+                const dataPrevista = new Date();
+                dataPrevista.setDate(dataPrevista.getDate() + diasRestantes);
+                const dataPrevistaStr = dataPrevista.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
                 let statusTexto = "OK";
                 let statusClass = "status-ok";
                 let corBarra = "var(--success)";
+                let textoEstimativa = "";
 
                 if (pctUtilizada >= 100) {
                     statusTexto = "CRÍTICO";
                     statusClass = "status-critical";
                     corBarra = "var(--primary)";
+                    textoEstimativa = `<span style="color: #ff3333;"><i class="fa-solid fa-triangle-exclamation"></i> Troca Vencida! Realize a manutenção.</span>`;
                 } else if (pctUtilizada >= 80) {
                     statusTexto = "ALERTA";
                     statusClass = "status-alert";
                     corBarra = "#ffaa00";
+                    textoEstimativa = `<i class="fa-regular fa-clock"></i> Faltam ~${diasRestantes} dias (${kmRestantes} KM) • Est. Troca: ${dataPrevistaStr}`;
+                } else {
+                    textoEstimativa = `<i class="fa-regular fa-calendar-check"></i> Próxima troca est.: ${dataPrevistaStr} (~${diasRestantes} dias)`;
                 }
 
                 const card = document.createElement('div');
@@ -556,6 +569,9 @@
                     <div class="maint-desc">
                         Rodou <strong>${kmRodados} KM</strong> de um limite de ${limite} KM.<br>
                         <span style="font-size:0.75rem; color: var(--text-muted)">Última troca em: ${ultimaKm} KM</span>
+                        <div class="maint-eta">
+                            ${textoEstimativa}
+                        </div>
                     </div>
                 `;
                 container.appendChild(card);
