@@ -129,8 +129,29 @@
         .btn-primary { width: 100%; background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
         .btn-primary:hover { background: var(--primary-hover); }
 
-        .selector-box { background: var(--bg-card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 30px; display: flex; align-items: center; justify-content: space-between; }
+        .selector-box { background: var(--bg-card); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 30px; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
         .selector-box div { flex-grow: 1; max-width: 400px; }
+
+        /* BOTÃO EXCLUIR MOTO */
+        .btn-delete-moto {
+            background: rgba(255, 51, 51, 0.15);
+            color: #ff3333;
+            border: 1px solid #ff3333;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+            height: 46px;
+            white-space: nowrap;
+        }
+        .btn-delete-moto:hover {
+            background: #ff3333;
+            color: #ffffff;
+        }
 
         /* CARDS DE MANUTENÇÃO */
         .maintenance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
@@ -157,6 +178,8 @@
             sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); min-height: auto; }
             .grid-forms { grid-template-columns: 1fr; }
             main { padding: 20px; }
+            .selector-box { flex-direction: column; align-items: stretch; }
+            .selector-box div { max-width: 100%; }
         }
     </style>
 </head>
@@ -221,6 +244,9 @@
                     <option value="">Nenhuma moto cadastrada</option>
                 </select>
             </div>
+            <button class="btn-delete-moto" onclick="excluirMotoAtiva()" title="Excluir moto selecionada">
+                <i class="fa-solid fa-trash-can"></i> Excluir Moto
+            </button>
         </div>
 
         <section id="view-garagem" class="view-section active">
@@ -302,7 +328,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, doc, updateDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, getDocs, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -430,14 +456,75 @@
             carregarDadosMotoAtiva();
         };
 
+        window.cadastrarMoto = async function(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const novaMoto = {
+                id_usuario: currentUser.uid,
+                modelo: document.getElementById('moto-modelo').value,
+                ano: parseInt(document.getElementById('moto-ano').value),
+                odometro_atual: parseInt(document.getElementById('moto-km').value),
+                km_diaria_estimada: parseInt(document.getElementById('moto-media').value) || 30
+            };
+
+            try {
+                const docRef = await addDoc(collection(db, "motos"), novaMoto);
+                activeMotoId = docRef.id;
+                alert("Moto cadastrada com sucesso!");
+                document.getElementById('form-moto').reset();
+            } catch (err) {
+                console.error("Erro ao cadastrar moto:", err);
+                alert("Erro ao cadastrar moto: " + err.message);
+            }
+        };
+
+        window.excluirMotoAtiva = async function() {
+            if (!activeMotoId) {
+                alert("Nenhuma moto selecionada para exclusão.");
+                return;
+            }
+
+            const motoAtiva = motosData.find(m => m.id === activeMotoId);
+            const nomeMoto = motoAtiva ? motoAtiva.modelo : "este veículo";
+
+            const confirmacao = confirm(`Tem certeza que deseja excluir a moto "${nomeMoto}"?\n\nTodas as manutenções vinculadas a ela também serão apagadas.`);
+            
+            if (!confirmacao) return;
+
+            try {
+                // 1. Apaga todas as manutenções atreladas a esta moto
+                const qManut = query(
+                    collection(db, "manutencoes"),
+                    where("id_moto", "==", activeMotoId)
+                );
+                const snapshotManut = await getDocs(qManut);
+                
+                const deletePromises = [];
+                snapshotManut.forEach((documento) => {
+                    deletePromises.push(deleteDoc(doc(db, "manutencoes", documento.id)));
+                });
+                await Promise.all(deletePromises);
+
+                // 2. Apaga o registro da moto no Firebase
+                await deleteDoc(doc(db, "motos", activeMotoId));
+
+                alert("Veículo e histórico de manutenções excluídos com sucesso!");
+
+                activeMotoId = null;
+
+            } catch (err) {
+                console.error("Erro ao excluir veículo:", err);
+                alert("Erro ao excluir veículo: " + err.message);
+            }
+        };
+
         function carregarDadosMotoAtiva() {
             if (!activeMotoId || !currentUser) return;
 
             const motoAtiva = motosData.find(m => m.id === activeMotoId);
             if (!motoAtiva) return;
 
-            // Removido o orderBy no Firestore para evitar que a query trave por falta de índice.
-            // A ordenação é feita via JavaScript logo em seguida.
             const qManut = query(
                 collection(db, "manutencoes"),
                 where("id_usuario", "==", currentUser.uid),
@@ -450,7 +537,6 @@
                     manutencoes.push({ id: doc.id, ...doc.data() });
                 });
 
-                // Ordena da maior KM realizada para a menor no próprio navegador
                 manutencoes.sort((a, b) => (Number(b.km_realizada) || 0) - (Number(a.km_realizada) || 0));
 
                 renderizarStatusPecas(motoAtiva, manutencoes);
@@ -477,10 +563,8 @@
             };
 
             try {
-                // 1. Salva o registro da manutenção
                 await addDoc(collection(db, "manutencoes"), novaManut);
                 
-                // 2. Atualiza o odômetro da moto na garagem se a KM da manutenção for maior ou igual ao odômetro atual
                 const motoAtiva = motosData.find(m => m.id === activeMotoId);
                 if (motoAtiva && kmRealizada >= motoAtiva.odometro_atual) {
                     const motoRef = doc(db, "motos", activeMotoId);
@@ -502,7 +586,6 @@
             const kmDiario = moto.km_diaria_estimada && Number(moto.km_diaria_estimada) > 0 ? Number(moto.km_diaria_estimada) : 30;
             const odometroAtual = Number(moto.odometro_atual) || 0;
 
-            // Data de Hoje
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
 
@@ -516,7 +599,6 @@
                 if (ultimas.length > 0) {
                     ultimaKm = Number(ultimas[0].km_realizada) || 0;
                     if (ultimas[0].data_servico) {
-                        // Faz o parse exato de AAAA-MM-DD ignorando diferenças de fuso horário
                         const p = ultimas[0].data_servico.split('-');
                         if (p.length === 3) {
                             dataManutencao = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
@@ -525,25 +607,21 @@
                     }
                 }
 
-                // 1. Diferença medida diretamente pelo odômetro
                 let kmRodadosManual = Math.max(0, odometroAtual - ultimaKm);
                 let kmEstimadosPorData = 0;
 
-                // 2. Cálculo dos dias decorridos a partir da data de manutenção cadastrada
                 if (dataManutencao) {
                     const diffMs = hoje.getTime() - dataManutencao.getTime();
                     const diasDecorridos = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
                     kmEstimadosPorData = diasDecorridos * kmDiario;
                 }
 
-                // O sistema assume o maior valor (seja atualização de odômetro ou tempo decorrido)
                 const kmRodados = Math.max(kmRodadosManual, kmEstimadosPorData);
 
                 let pctUtilizada = Math.min(100, (kmRodados / limite) * 100);
                 let pctBarraRestante = Math.max(0, 100 - pctUtilizada);
                 const kmRestantes = Math.max(0, limite - kmRodados);
 
-                // Cálculo da Previsão de Próxima Troca
                 let dataPrevista = new Date();
                 let diasRestantes = 0;
 
