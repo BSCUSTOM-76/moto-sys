@@ -145,7 +145,7 @@
         .progress-container { background: var(--bg-input); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
         .progress-bar { height: 100%; width: 0%; transition: width 0.5s ease; }
         .maint-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; }
-        .maint-eta { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 0.8rem; color: #32CD32; font-weight: 600; }
+        .maint-eta { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); font-size: 0.8rem; color: #32CD32; font-weight: 600; }
 
         /* HISTÓRICO */
         .history-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
@@ -291,7 +291,7 @@
                             <th>Data</th>
                             <th>Serviço / Componente</th>
                             <th>KM do Evento</th>
-                            <th>Idade do Serviço</th>
+                            <th>Status no Registro</th>
                         </tr>
                     </thead>
                     <tbody id="history-table-body"></tbody>
@@ -514,44 +514,68 @@
             const container = document.getElementById('maint-cards-container');
             container.innerHTML = '';
 
-            // Define KM diário a ser usado (usa o cadastro ou o padrão de 30 km/dia)
             const kmDiario = moto.km_diaria_estimada && moto.km_diaria_estimada > 0 ? moto.km_diaria_estimada : 30;
+            const hoje = new Date();
 
             Object.keys(LIMITES).forEach(tipo => {
                 const limite = LIMITES[tipo];
                 const ultimas = manutencoes.filter(m => m.tipo_componente === tipo);
-                const ultimaKm = ultimas.length > 0 ? ultimas[0].km_realizada : 0;
                 
+                let ultimaKm = 0;
+                let dataManutencao = null;
+
+                if (ultimas.length > 0) {
+                    ultimaKm = ultimas[0].km_realizada;
+                    if (ultimas[0].data_servico) {
+                        dataManutencao = new Date(ultimas[0].data_servico + 'T00:00:00');
+                    }
+                }
+
                 const kmRodados = Math.max(0, moto.odometro_atual - ultimaKm);
                 let pctUtilizada = Math.min(100, (kmRodados / limite) * 100);
                 let pctBarraRestante = 100 - pctUtilizada;
 
-                // Cálculo da estimativa de tempo restante
                 const kmRestantes = Math.max(0, limite - kmRodados);
-                const diasRestantes = Math.ceil(kmRestantes / kmDiario);
                 
-                // Previsão de data da próxima troca
-                const dataPrevista = new Date();
-                dataPrevista.setDate(dataPrevista.getDate() + diasRestantes);
+                // CÁLCULO BASEADO NA DATA DA MANUTENÇÃO
+                let dataPrevista = new Date();
+                let diasRestantes = 0;
+
+                if (dataManutencao) {
+                    // Calcula a data final limite somando (limite / kmDiario) dias a partir da data de troca
+                    const totalDiasDuracao = Math.round(limite / kmDiario);
+                    dataPrevista = new Date(dataManutencao);
+                    dataPrevista.setDate(dataPrevista.getDate() + totalDiasDuracao);
+
+                    // Dias que faltam da data de hoje até a data prevista
+                    const diffTime = dataPrevista - hoje;
+                    diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                } else {
+                    // Sem histórico de data, usa cálculo direto da data atual
+                    diasRestantes = Math.ceil(kmRestantes / kmDiario);
+                    dataPrevista.setDate(hoje.getDate() + diasRestantes);
+                }
+
                 const dataPrevistaStr = dataPrevista.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const dataServicoStr = dataManutencao ? dataManutencao.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Não informada';
 
                 let statusTexto = "OK";
                 let statusClass = "status-ok";
                 let corBarra = "var(--success)";
                 let textoEstimativa = "";
 
-                if (pctUtilizada >= 100) {
+                if (pctUtilizada >= 100 || diasRestantes <= 0) {
                     statusTexto = "CRÍTICO";
                     statusClass = "status-critical";
                     corBarra = "var(--primary)";
-                    textoEstimativa = `<span style="color: #ff3333;"><i class="fa-solid fa-triangle-exclamation"></i> Troca Vencida! Realize a manutenção.</span>`;
-                } else if (pctUtilizada >= 80) {
+                    textoEstimativa = `<span style="color: #ff3333;"><i class="fa-solid fa-triangle-exclamation"></i> Vencido/Troca Necessária!</span>`;
+                } else if (pctUtilizada >= 80 || diasRestantes <= 15) {
                     statusTexto = "ALERTA";
                     statusClass = "status-alert";
                     corBarra = "#ffaa00";
-                    textoEstimativa = `<i class="fa-regular fa-clock"></i> Faltam ~${diasRestantes} dias (${kmRestantes} KM) • Est. Troca: ${dataPrevistaStr}`;
+                    textoEstimativa = `<i class="fa-regular fa-clock"></i> Faltam ~${diasRestantes} dias (${kmRestantes} KM) • Est.: ${dataPrevistaStr}`;
                 } else {
-                    textoEstimativa = `<i class="fa-regular fa-calendar-check"></i> Próxima troca est.: ${dataPrevistaStr} (~${diasRestantes} dias)`;
+                    textoEstimativa = `<i class="fa-regular fa-calendar-check"></i> Próxima troca: ${dataPrevistaStr} (~${diasRestantes} dias restan.)`;
                 }
 
                 const card = document.createElement('div');
@@ -567,8 +591,8 @@
                         </div>
                     </div>
                     <div class="maint-desc">
-                        Rodou <strong>${kmRodados} KM</strong> de um limite de ${limite} KM.<br>
-                        <span style="font-size:0.75rem; color: var(--text-muted)">Última troca em: ${ultimaKm} KM</span>
+                        Rodou <strong>${kmRodados} KM</strong> de ${limite} KM limite.<br>
+                        <span style="font-size:0.75rem; color: var(--text-muted)">Última troca em: ${dataServicoStr} (${ultimaKm} KM)</span>
                         <div class="maint-eta">
                             ${textoEstimativa}
                         </div>
@@ -594,7 +618,7 @@
                     <td><strong>${dataFormatada}</strong></td>
                     <td><span style="color: var(--primary); font-weight:600;">${traduzirTipo(m.tipo_componente)}</span></td>
                     <td>${m.km_realizada} KM</td>
-                    <td><small style="color: var(--text-muted)">Registrado na base</small></td>
+                    <td><small style="color: var(--success)"><i class="fa-solid fa-check"></i> Concluído</small></td>
                 `;
                 tbody.appendChild(tr);
             });
