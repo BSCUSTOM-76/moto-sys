@@ -1,9 +1,9 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, doc, updateDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // CONFIGURAÇÃO DO SEU FIREBASE
+    // CONFIGURAÇÃO DO FIREBASE
     const firebaseConfig = {
         apiKey: "AIzaSyBr_NKOSzmh2CwbR7SYaLAk_0TsYe39VTY",
         authDomain: "moto-sys.firebaseapp.com",
@@ -18,7 +18,7 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // ESTADO GLOBAL DA APLICAÇÃO
+    // ESTADO GLOBAL
     let currentUser = null;
     let isLoginMode = true;
     let activeMotoId = null;
@@ -64,7 +64,6 @@
         signOut(auth);
     };
 
-    // ESCUTADOR DE ESTADO DE LOGIN
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
@@ -87,7 +86,7 @@
         motosData = [];
     }
 
-    // --- INICIALIZAÇÃO DOS DADOS OTIMIZADOS ---
+    // --- INICIALIZAÇÃO E CARREGAMENTO DE DADOS ---
     function initApp() {
         const qMotos = query(
             collection(db, "motos"), 
@@ -125,7 +124,7 @@
 
     function limparPaineis() {
         document.getElementById('maint-cards-container').innerHTML = '<p style="color: var(--text-muted)">Cadastre uma moto para visualizar o status.</p>';
-        document.getElementById('history-table-body').innerHTML = '<tr><td colspan="4" style="color: var(--text-muted); text-align: center;">Nenhum registro encontrado.</td></tr>';
+        document.getElementById('history-table-body').innerHTML = '<tr><td colspan="5" style="color: var(--text-muted); text-align: center;">Nenhum registro encontrado.</td></tr>';
     }
 
     window.setActiveMoto = function(id) {
@@ -158,7 +157,7 @@
         });
     }
 
-    // --- OPERAÇÕES DE BANCO DE DADOS ---
+    // --- OPERAÇÕES CRUD ---
     window.cadastrarMoto = async function(e) {
         e.preventDefault();
         if (!currentUser) return;
@@ -173,7 +172,7 @@
 
         try {
             await addDoc(collection(db, "motos"), novaMoto);
-            alert("Moto adicionada à sua garagem com sucesso!");
+            alert("Moto adicionada com sucesso!");
             document.getElementById('form-moto').reset();
         } catch (err) {
             console.error(err);
@@ -201,7 +200,6 @@
         try {
             await addDoc(collection(db, "manutencoes"), novaManut);
 
-            // Atualiza automaticamente o odômetro da moto se a manutenção foi em uma KM maior
             const motoAtiva = motosData.find(m => m.id === activeMotoId);
             if (motoAtiva && kmLancada > (motoAtiva.odometro_atual || 0)) {
                 const motoRef = doc(db, "motos", activeMotoId);
@@ -216,26 +214,56 @@
         }
     };
 
-    // --- RENDERIZADORES DE TELA (LÓGICA DE MANUTENÇÃO AJUSTADA) ---
+    // FUNÇÃO PARA EXCLUIR MANUTENÇÃO
+    window.excluirManutencao = async function(id) {
+        if (confirm("Tem certeza que deseja excluir este registro de manutenção?")) {
+            try {
+                await deleteDoc(doc(db, "manutencoes", id));
+                alert("Registro excluído com sucesso!");
+            } catch (err) {
+                console.error(err);
+                alert("Erro ao excluir registro: " + err.message);
+            }
+        }
+    };
+
+    // FUNÇÃO PARA EDITAR MANUTENÇÃO
+    window.editarManutencao = async function(id, kmAtual, dataAtual) {
+        const novaKm = prompt("Informe a nova KM da manutenção:", kmAtual);
+        if (novaKm === null || novaKm.trim() === "") return;
+
+        const novaData = prompt("Informe a nova data (AAAA-MM-DD):", dataAtual);
+        if (novaData === null || novaData.trim() === "") return;
+
+        try {
+            const manutRef = doc(db, "manutencoes", id);
+            await updateDoc(manutRef, {
+                km_realizada: parseInt(novaKm),
+                data_servico: novaData
+            });
+            alert("Manutenção atualizada com sucesso!");
+        } catch (err) {
+            console.error(err);
+            alert("Erro ao editar manutenção: " + err.message);
+        }
+    };
+
+    // --- RENDERIZADORES DE TELA ---
     function renderizarStatusPecas(moto, manutencoes) {
         const container = document.getElementById('maint-cards-container');
         container.innerHTML = '';
 
         const odometroAtual = Number(moto.odometro_atual) || 0;
-        const mediaDiaria = Number(moto.km_diaria_estimada) || 1; // Evita divisão por zero
+        const mediaDiaria = Number(moto.km_diaria_estimada) || 1;
 
         Object.keys(LIMITES).forEach(tipo => {
             const limite = LIMITES[tipo];
             const ultimas = manutencoes.filter(m => m.tipo_componente === tipo);
-            const ultimaKm = ultimas.length > 0 ? Number(ultimas[0].km_realizada) : 0;
+            const ultimaManut = ultimas.length > 0 ? ultimas[0] : null;
+            const ultimaKm = ultimaManut ? Number(ultimaManut.km_realizada) : 0;
             
-            // Quilometragem rodada desde a última troca
             const kmRodados = Math.max(0, odometroAtual - ultimaKm);
-            
-            // Quanto falta rodar para atingir o limite
             const kmRestantes = limite - kmRodados;
-
-            // Porcentagem de desgaste (0% nova / 100% no limite)
             let pctUso = Math.min(100, Math.max(0, (kmRodados / limite) * 100));
 
             let statusTexto = "OK";
@@ -243,7 +271,6 @@
             let corBarra = "var(--success)";
             let mensagemPrazo = "";
 
-            // Cálculo do tempo estimado restante em dias e meses
             if (kmRestantes > 0) {
                 const diasRestantes = Math.round(kmRestantes / mediaDiaria);
                 if (diasRestantes > 30) {
@@ -257,7 +284,6 @@
                 mensagemPrazo = `<span style="color:var(--primary); font-weight:bold;">Vencido há ${kmVencidos} KM!</span>`;
             }
 
-            // Definição das cores e avisos por faixa de uso
             if (pctUso >= 100) {
                 statusTexto = "CRÍTICO";
                 statusClass = "status-critical";
@@ -266,6 +292,17 @@
                 statusTexto = "ALERTA";
                 statusClass = "status-alert";
                 corBarra = "#ffaa00";
+            }
+
+            // Ações de Editar / Excluir no Card
+            let acoesHtml = '';
+            if (ultimaManut) {
+                acoesHtml = `
+                    <div style="margin-top: 8px; display: flex; gap: 8px; justify-content: flex-end;">
+                        <button onclick="editarManutencao('${ultimaManut.id}', ${ultimaManut.km_realizada}, '${ultimaManut.data_servico}')" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem;" title="Editar Última Manutenção">✏️ Editar</button>
+                        <button onclick="excluirManutencao('${ultimaManut.id}')" style="background: none; border: none; color: var(--primary); cursor: pointer; font-size: 0.85rem;" title="Excluir Registro">🗑️ Excluir</button>
+                    </div>
+                `;
             }
 
             const card = document.createElement('div');
@@ -284,8 +321,9 @@
                     ${mensagemPrazo}<br>
                     <span style="font-size:0.78rem; color: var(--text-muted)">
                         Uso: ${kmRodados} KM de ${limite} KM
-                        ${ultimaKm > 0 ? `<br>(Última troca feita em ${ultimaKm} KM)` : '<br>(Nenhuma troca registrada)'}
+                        ${ultimaKm > 0 ? `<br>(Última troca em ${ultimaKm} KM)` : '<br>(Nenhuma troca registrada)'}
                     </span>
+                    ${acoesHtml}
                 </div>
             `;
             container.appendChild(card);
@@ -297,7 +335,7 @@
         tbody.innerHTML = '';
 
         if (manutencoes.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="color: var(--text-muted); text-align: center;">Nenhum serviço registrado nesta moto.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="color: var(--text-muted); text-align: center;">Nenhum serviço registrado nesta moto.</td></tr>';
             return;
         }
 
@@ -308,7 +346,11 @@
                 <td><strong>${dataFormatada}</strong></td>
                 <td><span style="color: var(--primary); font-weight:600;">${traduzirTipo(m.tipo_componente)}</span></td>
                 <td>${m.km_realizada} KM</td>
-                <td><small style="color: var(--text-muted)">Registrado na base</small></td>
+                <td><small style="color: var(--text-muted)">Registrado</small></td>
+                <td style="text-align: center;">
+                    <button onclick="editarManutencao('${m.id}', ${m.km_realizada}, '${m.data_servico}')" style="background:none; border:none; cursor:pointer; margin-right: 5px;" title="Editar">✏️</button>
+                    <button onclick="excluirManutencao('${m.id}')" style="background:none; border:none; cursor:pointer;" title="Excluir">🗑️</button>
+                </td>
             `;
             tbody.appendChild(tr);
         });
