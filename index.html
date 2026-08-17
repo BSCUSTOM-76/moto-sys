@@ -406,7 +406,7 @@
         };
 
         // REGISTRO DO SERVICE WORKER E PERMISSÃO DE NOTIFICAÇÃO
-        if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/moto-sys/firebase-messaging-sw.js', { scope: '/moto-sys/' })
     .then((registration) => {
         console.log('Service Worker Firebase registrado com sucesso:', registration.scope);
