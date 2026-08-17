@@ -516,6 +516,8 @@
 
             const kmDiario = moto.km_diaria_estimada && moto.km_diaria_estimada > 0 ? moto.km_diaria_estimada : 30;
             const hoje = new Date();
+            // Zerando horas para considerar dias inteiros
+            hoje.setHours(0, 0, 0, 0);
 
             Object.keys(LIMITES).forEach(tipo => {
                 const limite = LIMITES[tipo];
@@ -531,27 +533,36 @@
                     }
                 }
 
-                const kmRodados = Math.max(0, moto.odometro_atual - ultimaKm);
-                let pctUtilizada = Math.min(100, (kmRodados / limite) * 100);
-                let pctBarraRestante = 100 - pctUtilizada;
+                // KM vinda do odômetro manual
+                let kmRodadosManual = Math.max(0, moto.odometro_atual - ultimaKm);
+                let kmEstimadosPorData = 0;
 
+                // Cálculo dos dias passados DESDE a data da manutenção
+                if (dataManutencao) {
+                    const diffTime = hoje - dataManutencao;
+                    const diasDecorridos = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+                    kmEstimadosPorData = diasDecorridos * kmDiario;
+                }
+
+                // Utiliza a maior KM (se o odômetro não foi atualizado, usa a estimativa por data)
+                const kmRodados = Math.max(kmRodadosManual, kmEstimadosPorData);
+
+                let pctUtilizada = Math.min(100, (kmRodados / limite) * 100);
+                let pctBarraRestante = Math.max(0, 100 - pctUtilizada);
                 const kmRestantes = Math.max(0, limite - kmRodados);
-                
-                // CÁLCULO BASEADO NA DATA DA MANUTENÇÃO
+
+                // Cálculo da Data Prevista de Vencimento
                 let dataPrevista = new Date();
                 let diasRestantes = 0;
 
                 if (dataManutencao) {
-                    // Calcula a data final limite somando (limite / kmDiario) dias a partir da data de troca
                     const totalDiasDuracao = Math.round(limite / kmDiario);
                     dataPrevista = new Date(dataManutencao);
                     dataPrevista.setDate(dataPrevista.getDate() + totalDiasDuracao);
 
-                    // Dias que faltam da data de hoje até a data prevista
-                    const diffTime = dataPrevista - hoje;
-                    diasRestantes = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    const diffRestante = dataPrevista - hoje;
+                    diasRestantes = Math.ceil(diffRestante / (1000 * 60 * 60 * 24));
                 } else {
-                    // Sem histórico de data, usa cálculo direto da data atual
                     diasRestantes = Math.ceil(kmRestantes / kmDiario);
                     dataPrevista.setDate(hoje.getDate() + diasRestantes);
                 }
