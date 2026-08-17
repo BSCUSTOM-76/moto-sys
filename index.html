@@ -417,32 +417,34 @@
 }
 
         window.solicitarPermissaoNotificacao = async function() {
-            try {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    // Chave VAPID pública gerada no console do Firebase para Web Push
-                    const token = await getToken(messaging, { 
-                        vapidKey: 'B...' // Substitua pela sua chave VAPID se necessário
-                    });
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            
+            // Registra apontando explicitamente para a pasta do repositório
+            const registration = await navigator.serviceWorker.register('/moto-sys/firebase-messaging-sw.js', { scope: '/moto-sys/' });
 
-                    if (token && currentUser) {
-                        await setDoc(doc(db, "usuarios", currentUser.uid), {
-                            fcmToken: token,
-                            email: currentUser.email,
-                            atualizadoEm: new Date().toISOString()
-                        }, { merge: true });
-                    }
-                    
-                    document.getElementById('btn-notifications').style.display = 'none';
-                    alert("Alertas ativados com sucesso! Você receberá avisos no seu celular.");
-                } else {
-                    alert("Permissão para notificações foi negada.");
-                }
-            } catch (error) {
-                console.error("Erro ao ativar notificações:", error);
-                alert("Erro ao configurar notificações no dispositivo.");
+            const token = await getToken(messaging, { 
+                vapidKey: 'SUA_CHAVE_VAPID_AQUI',
+                serviceWorkerRegistration: registration
+            });
+
+            if (token && currentUser) {
+                await setDoc(doc(db, "usuarios", currentUser.uid), {
+                    fcmToken: token,
+                    email: currentUser.email,
+                    atualizadoEm: new Date().toISOString()
+                }, { merge: true });
             }
-        };
+            
+            alert("Alertas ativados com sucesso!");
+        } else {
+            alert("Permissão para notificações foi negada.");
+        }
+    } catch (error) {
+        console.error("Erro ao ativar notificações:", error);
+    }
+};
 
         onMessage(messaging, (payload) => {
             console.log('Notificação recebida com app aberto:', payload);
